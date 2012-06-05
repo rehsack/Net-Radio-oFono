@@ -1,0 +1,15 @@
+Build.PL
+Changes
+lib/Net/oFono.pm
+lib/Net/oFono/Manager.pm
+lib/Net/oFono/Modem.pm
+lib/Net/oFono/NetworkRegistration.pm
+lib/Net/oFono/SimManager.pm
+MANIFEST
+README
+scripts/disable-modem
+scripts/enable-modem
+t/00-load.t
+t/manifest.t
+t/pod-coverage.t
+t/pod.t

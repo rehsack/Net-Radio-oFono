@@ -1,0 +1,14 @@
+#!/usr/pkg/bin/perl -w
+
+use strict;
+use warnings;
+
+use Net::oFono;
+
+use Data::Dumper;
+
+my ($pin, $apn, $usr, $prd) = @ENV{"PIN", "APN", "USR", "PRD"};
+
+my $oFono = Net::oFono->new();
+
+print Dumper($oFono);
