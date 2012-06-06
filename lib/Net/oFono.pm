@@ -17,6 +17,10 @@ use Net::oFono::Modem;
 use Net::oFono::SimManager;
 use Net::oFono::NetworkRegistration;
 
+use Log::Any qw($log);
+
+use base qw(Net::oFono::Helpers::EventMgr);
+
 =head1 SYNOPSIS
 
 Quick summary of what the module does.
@@ -42,21 +46,11 @@ my $instance;
 sub get_instance
 {
     $instance and return $instance;
+    my ( $class, %events ) = @_;
 
-    $instance = bless( {}, __PACKAGE__ );
-
-    $instance->{manager} = Net::oFono::Manager->new();
-    my %modems = $instance->{manager}->GetModems();
-    my %modem_objects;
-    foreach my $modem (keys %modems)
-    {
-	$modem_objects{$modem}->{modem} = Net::oFono::Modem->new($modem);
-	# $modem_objects{$modem}->{simmgr} = Net::oFono::SimManager->new($modem);
-	# $modem_objects{$modem}->{nwreg} = Net::oFono::NetworkRegistration->new($modem);
-    }
-    $instance->{modems} = \%modem_objects;
-
-    $instance->{manager}->add_notify($instance);
+    $instance = __PACKAGE__->SUPER::new(%events);
+    bless( $instance, __PACKAGE__ );
+    $instance->_init();
 
     return $instance;
 }
@@ -71,6 +65,25 @@ no strict 'refs';
 
 use strict 'refs';
 
+sub _init
+{
+    my $self = shift;
+
+    $self->{manager} = Net::oFono::Manager->new();
+
+    my %modems = $self->{manager}->GetModems();
+    $self->{modems} = {};
+    foreach my $modem_path ( keys %modems )
+    {
+        $self->_add_modem($modem_path);
+    }
+
+    $self->{manager}->add_event( "ON_MODEM_ADDED",   \&on_modem_added,   $self );
+    $self->{manager}->add_event( "ON_MODEM_REMOVED", \&on_modem_removed, $self );
+
+    return $self;
+}
+
 sub shutdown
 {
     $instance or return;
@@ -78,39 +91,112 @@ sub shutdown
     undef $instance;
 }
 
-sub DESTROY
+sub _add_modem
 {
-    my $self = shift;
+    my ( $self, $modem_path ) = @_;
 
-    $self->{manager}->remove_notify($self);
+    my $modem = Net::oFono::Modem->new($modem_path);
+    $self->{modems}->{$modem_path}->{Modem} = $modem;
 
-    return $self->SUPER::DESTROY();
+    $modem->add_event( "ON_PROPERTY_CHANGED",            \&on_modem_property_changed,   $self );
+    $modem->add_event( "ON_PROPERTY_INTERFACES_CHANGED", \&on_modem_interfaces_changed, $self );
+
+    $self->_update_modem_interfaces($modem);
+
+    $self->trigger_event( "ON_MODEM_ADDED", $modem_path );
 }
 
-=head2 modem_added
-
-=cut
-
-sub modem_added
+sub _update_modem_interfaces
 {
-    my ( $self, $modem, $mdata ) = @_;
+    my ( $self, $modem, $interfaces ) = @_;
+    $interfaces //= $modem->GetProperty("Interfaces");
+    my @interface_list              = map { $_ =~ s/org.ofono.//; $_ } @$interfaces;
+    my $if_instances            = $self->{modems}->{$modem->modem_path()};
+    my %superflous_if_instances = map { $_ => 1 } keys %$if_instances;
+    delete $superflous_if_instances{Modem};
 
-    $self->{modems}->{$modem}->{modem} = Net::oFono::Modem->new($modem);
-    # $self->{modems}->{$modem}->{simmgr} = Net::oFono::SimManager->new($modem);
-    # $self->{modems}->{$modem}->{nwreg} = Net::oFono::NetworkRegistration->new($modem);
+    foreach my $interface (@interface_list)
+    {
+        my $if_class = "Net::oFono::$interface";
+        $if_class->isa("Net::oFono::Modem") or next;
+        defined( $if_instances->{$interface} ) and next;
+        $if_instances->{$interface} = $if_class->new( $modem->modem_path() );
+        $if_instances->{$interface}->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
+        delete $superflous_if_instances{$interface};
+        $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem->modem_path(), $interface ] );
+        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED",
+                              $modem->modem_path() );
+    }
+
+    foreach my $interface ( keys %superflous_if_instances )
+    {
+        delete $if_instances->{$interface};
+        $self->trigger_event( "ON_MODEM_INTERFACE_REMOVED", [ $modem->modem_path(), $interface ] );
+    }
 
     return;
 }
 
-=head2 modem_removed
+sub get_modems
+{
+    my $self = $_[0];
+
+    return keys %{ $self->{modems} };
+}
+
+sub get_modem_interface
+{
+    my ( $self, $modem_path, $if_name ) = @_;
+    defined( $self->{modems}->{$modem_path} )
+      and defined( $self->{modems}->{$modem_path}->{$if_name} )
+      and return $self->{modems}->{$modem_path}->{$if_name};
+    return;
+}
+
+=head2 on_modem_added
 
 =cut
 
-sub modem_removed
+sub on_modem_added
 {
-    my ( $self, $modem ) = @_;
+    my ( $self, $manager, $event, $modem_path ) = @_;
 
-    delete $self->{modems}->{$modem};
+    $self->_add_modem($modem_path);
+
+    return;
+}
+
+=head2 on_modem_removed
+
+=cut
+
+sub on_modem_removed
+{
+    my ( $self, $manager, $event, $modem_path ) = @_;
+
+    delete $self->{modems}->{$modem_path};
+}
+
+sub on_modem_interfaces_changed
+{
+    my ( $self, $modem, $event_name, $interfaces ) = @_;
+
+    $self->_update_modem_interfaces( $modem, $interfaces );
+
+    return;
+}
+
+sub on_modem_property_changed
+{
+    my ( $self, $obj, $event_name, $property ) = @_;
+    my $modem_path = $obj->modem_path();
+    ( my $if_name = ref($obj) ) =~ s/.*://;
+
+    $self->trigger_event( "ON_" . uc($if_name) . "_PROPERTY_CHANGED", [ $modem_path, $property ] );
+    $self->trigger_event( "ON_" . uc($if_name) . "_PROPERTY_" . uc($property) . "_CHANGED",
+                          [ $modem_path, $obj->GetProperty($property) ] );
+
+    return;
 }
 
 =head1 AUTHOR
@@ -172,4 +258,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of Net::oFono
+1;    # End of Net::oFono

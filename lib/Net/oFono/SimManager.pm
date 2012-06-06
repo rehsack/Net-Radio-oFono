@@ -13,7 +13,9 @@ Net::oFono::SimManager
 our $VERSION = '0.001';
 
 use Carp qw/croak/;
-use Net::DBus;
+use Net::DBus qw(:typing);
+
+use base qw(Net::oFono::Modem);
 
 use Data::Dumper;
 
@@ -35,25 +37,16 @@ Perhaps a little code snippet.
 
 =cut
 
-sub new
-{
-    my ($class, $modem_path) = @_;
-
-    my $self = bless( { modem_path => $modem_path }, $class );
-
-    $self->_init();
-
-    return $self;
-}
-
 sub _init
 {
     my $self = $_[0];
-    my $bus           = Net::DBus->system();
-    $self->{simmgr} = $bus->get_service("org.ofono")->get_object( $self->{modem_path}, "org.ofono.SimManager" );
+    my $bus  = Net::DBus->system();
+    $self->{remote_obj} =
+      $bus->get_service("org.ofono")->get_object( $self->{modem_path}, "org.ofono.SimManager" );
 
     my $on_property_changed = sub { return $self->onPropertyChanged(@_); };
-    $self->{sig_property_changed} = $self->{simmgr}->connect_to_signal( "PropertyChanged", $on_property_changed );
+    $self->{sig_property_changed} =
+      $self->{remote_obj}->connect_to_signal( "PropertyChanged", $on_property_changed );
 
     return;
 }
@@ -62,103 +55,104 @@ sub DESTROY
 {
     my $self = $_[0];
 
-    $self->{simmgr}->disconnect_from_signal( "PropertyChanged",   $self->{sig_property_changed} );
+    defined($self->{remote_obj}) and
+    $self->{remote_obj}->disconnect_from_signal( "PropertyChanged", $self->{sig_property_changed} );
 
-    undef $self->{simmgr};
+    undef $self->{remote_obj};
 
-    return $self->SUPER::DESTROY();
-}
-
-sub onPropertyChanged
-{
-    my ($self, $property, $value) = @_;
-    $self->{properties}->{$property} = $value;
     return;
 }
 
-sub GetProperties
-{
-    my ( $self, $force ) = @_;
-
-    $force and %{ $self->{properties} } = @{ $self->{simmgr}->GetProperties() };
-
-    return wantarray ? %{ $self->{properties} } : $self->{properties};
-}
-
-sub GetProperty
-{
-    my ($self, $property, $force) = @_;
-
-    $force and $self->GetProperties(1);
-
-    return $self->{properties}->{$property};
-}
-
 my @valid_pin_types = (
-    qw(none pin phone firstphone pin2 network netsub service corp puk),
-    qw(firstphonepuk puk2 networkpuk netsubpuk servicepuk corppuk)
-    );
+                        qw(none pin phone firstphone pin2 network netsub service corp puk),
+                        qw(firstphonepuk puk2 networkpuk netsubpuk servicepuk corppuk)
+                      );
 
 sub ChangePin
 {
-    my ($self, $pin_type, $oldpin, $newpin) = @_;
+    my ( $self, $pin_type, $oldpin, $newpin ) = @_;
 
-    $pin_type ~~ @valid_pin_types or croak( "Invalid PIN type: '" . $pin_type . "'. Valid are: '" . join( "', '", @valid_pin_types ) . "'.");
+    $pin_type ~~ @valid_pin_types
+      or croak(   "Invalid PIN type: '"
+                . $pin_type
+                . "'. Valid are: '"
+                . join( "', '", @valid_pin_types )
+                . "'." );
 
-    $self->{simmgr}->ChangePin( $pin_type, $oldpin, $newpin );
+    $self->{remote_obj}->ChangePin( dbus_string($pin_type), dbus_string($oldpin), dbus_string($newpin) );
 
     return;
 }
 
 sub EnterPin
 {
-    my ($self, $pin_type, $pin) = @_;
+    my ( $self, $pin_type, $pin ) = @_;
 
-    $pin_type ~~ @valid_pin_types or croak( "Invalid PIN type: '" . $pin_type . "'. Valid are: '" . join( "', '", @valid_pin_types ) . "'.");
+    $pin_type ~~ @valid_pin_types
+      or croak(   "Invalid PIN type: '"
+                . $pin_type
+                . "'. Valid are: '"
+                . join( "', '", @valid_pin_types )
+                . "'." );
 
-    $self->{simmgr}->EnterPin( $pin_type, $pin );
+    $self->{remote_obj}->EnterPin( dbus_string($pin_type), dbus_string($pin) );
 
     return;
 }
 
 sub ResetPin
 {
-    my ($self, $pin_type, $puk, $pin) = @_;
+    my ( $self, $pin_type, $puk, $pin ) = @_;
 
-    $pin_type ~~ @valid_pin_types or croak( "Invalid PIN type: '" . $pin_type . "'. Valid are: '" . join( "', '", @valid_pin_types ) . "'.");
+    $pin_type ~~ @valid_pin_types
+      or croak(   "Invalid PIN type: '"
+                . $pin_type
+                . "'. Valid are: '"
+                . join( "', '", @valid_pin_types )
+                . "'." );
 
-    $self->{simmgr}->ResetPin( $pin_type, $puk, $pin );
+    $self->{remote_obj}->ResetPin( dbus_string($pin_type), dbus_string($puk), dbus_string($pin) );
 
     return;
 }
 
 sub LockPin
 {
-    my ($self, $pin_type, $pin) = @_;
+    my ( $self, $pin_type, $pin ) = @_;
 
-    $pin_type ~~ @valid_pin_types or croak( "Invalid PIN type: '" . $pin_type . "'. Valid are: '" . join( "', '", @valid_pin_types ) . "'.");
+    $pin_type ~~ @valid_pin_types
+      or croak(   "Invalid PIN type: '"
+                . $pin_type
+                . "'. Valid are: '"
+                . join( "', '", @valid_pin_types )
+                . "'." );
 
-    $self->{simmgr}->LockPin( $pin_type, $pin );
+    $self->{remote_obj}->LockPin( dbus_string($pin_type), dbus_string($pin) );
 
     return;
 }
 
 sub UnlockPin
 {
-    my ($self, $pin_type, $pin) = @_;
+    my ( $self, $pin_type, $pin ) = @_;
 
-    $pin_type ~~ @valid_pin_types or croak( "Invalid PIN type: '" . $pin_type . "'. Valid are: '" . join( "', '", @valid_pin_types ) . "'.");
+    $pin_type ~~ @valid_pin_types
+      or croak(   "Invalid PIN type: '"
+                . $pin_type
+                . "'. Valid are: '"
+                . join( "', '", @valid_pin_types )
+                . "'." );
 
-    $self->{simmgr}->UnlockPin( $pin_type, $pin );
+    $self->{remote_obj}->UnlockPin( dbus_string($pin_type), dbus_string($pin) );
 
     return;
 }
 
 sub GetIcon
 {
-    my ($self, $id) = @_;
+    my ( $self, $id ) = @_;
 
-    return $self->{simmgr}->getIcon($id);
+    return $self->{remote_obj}->getIcon($id);
 }
 
 1;
