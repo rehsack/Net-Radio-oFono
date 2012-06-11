@@ -1,4 +1,4 @@
-package Net::oFono::Manager;
+package Net::Radio::oFono::Manager;
 
 use 5.010;
 use strict;
@@ -6,13 +6,13 @@ use warnings;
 
 =head1 NAME
 
-Net::oFono::Manager - Perl API to oFono's Modem Manager
+Net::Radio::oFono::Manager - Perl API to oFono's Modem Manager
 
 =cut
 
 our $VERSION = '0.001';
 
-use base qw(Net::oFono::Helpers::EventMgr);
+use base qw(Net::Radio::oFono::Helpers::EventMgr);
 
 use Net::DBus qw(:typing);
 
@@ -24,9 +24,9 @@ Quick summary of what the module does.
 
 Perhaps a little code snippet.
 
-    use Net::oFono::Manager;
+    use Net::Radio::oFono::Manager;
 
-    my $oMgr = Net::oFono::Manager->new();
+    my $oMgr = Net::Radio::oFono::Manager->new();
     my @modems = $oMgr->GetModems();
     my ($mcc, $mnc, $lac, ...) = $
 

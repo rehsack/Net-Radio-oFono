@@ -1,4 +1,4 @@
-package Net::oFono;
+package Net::Radio::oFono;
 
 use 5.010;
 use strict;
@@ -6,20 +6,20 @@ use warnings;
 
 =head1 NAME
 
-Net::oFono - Perl API to oFono
+Net::Radio::oFono - Perl API to oFono
 
 =cut
 
 our $VERSION = '0.001';
 
-use Net::oFono::Manager;
-use Net::oFono::Modem;
-use Net::oFono::SimManager;
-use Net::oFono::NetworkRegistration;
+use Net::Radio::oFono::Manager;
+use Net::Radio::oFono::Modem;
+use Net::Radio::oFono::SimManager;
+use Net::Radio::oFono::NetworkRegistration;
 
 use Log::Any qw($log);
 
-use base qw(Net::oFono::Helpers::EventMgr);
+use base qw(Net::Radio::oFono::Helpers::EventMgr);
 
 =head1 SYNOPSIS
 
@@ -27,9 +27,9 @@ Quick summary of what the module does.
 
 Perhaps a little code snippet.
 
-    use Net::oFono;
+    use Net::Radio::oFono;
 
-    my $oFono = Net::oFono->new();
+    my $oFono = Net::Radio::oFono->new();
     my @modems = $oFono->getModems();
     my ($mcc, $mnc, $lac, ...) = $
 
@@ -69,7 +69,7 @@ sub _init
 {
     my $self = shift;
 
-    $self->{manager} = Net::oFono::Manager->new();
+    $self->{manager} = Net::Radio::oFono::Manager->new();
 
     my %modems = $self->{manager}->GetModems();
     $self->{modems} = {};
@@ -95,7 +95,7 @@ sub _add_modem
 {
     my ( $self, $modem_path ) = @_;
 
-    my $modem = Net::oFono::Modem->new($modem_path);
+    my $modem = Net::Radio::oFono::Modem->new($modem_path);
     $self->{modems}->{$modem_path}->{Modem} = $modem;
 
     $modem->add_event( "ON_PROPERTY_CHANGED",            \&on_modem_property_changed,   $self );
@@ -117,8 +117,8 @@ sub _update_modem_interfaces
 
     foreach my $interface (@interface_list)
     {
-        my $if_class = "Net::oFono::$interface";
-        $if_class->isa("Net::oFono::Modem") or next;
+        my $if_class = "Net::Radio::oFono::$interface";
+        $if_class->isa("Net::Radio::oFono::Modem") or next;
         defined( $if_instances->{$interface} ) and next;
         $if_instances->{$interface} = $if_class->new( $modem->modem_path() );
         $if_instances->{$interface}->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
@@ -216,7 +216,7 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Net::oFono
+    perldoc Net::Radio::oFono
 
 
 You can also look for information at:
@@ -258,4 +258,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1;    # End of Net::oFono
+1;    # End of Net::Radio::oFono

@@ -1,4 +1,4 @@
-package Net::oFono::Helpers::EventMgr;
+package Net::Radio::oFono::Helpers::EventMgr;
 
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use Log::Any qw($log);
 
 =head1 NAME
 
-Net::oFono::Helpers::EventMgr - simple event manager
+Net::Radio::oFono::Helpers::EventMgr - simple event manager
 
 DESCRIPTION
 
@@ -166,7 +166,7 @@ sub add_event
                  FUNC => $func,
                  MEMO => $memo
                };
-    Net::oFono::Helpers::EventMgr::Container->_add_to( $elem, $self->{events}->{$event} );
+    Net::Radio::oFono::Helpers::EventMgr::Container->_add_to( $elem, $self->{events}->{$event} );
 
     return $self;
 }
@@ -184,7 +184,7 @@ sub remove_event
                  FUNC => $func,
                  MEMO => $memo
                };
-    Net::oFono::Helpers::EventMgr::Container->_remove_from( $elem, $self->{events}->{$event} );
+    Net::Radio::oFono::Helpers::EventMgr::Container->_remove_from( $elem, $self->{events}->{$event} );
 
     return $self;
 }
@@ -347,9 +347,9 @@ sub DESTROY
 
 {    # hide from CPAN
 
-    package Net::oFono::Helpers::EventMgr::Container;
+    package Net::Radio::oFono::Helpers::EventMgr::Container;
 
-    use base qw(Net::oFono::Helpers::Container);
+    use base qw(Net::Radio::oFono::Helpers::Container);
 
     sub _where
     {

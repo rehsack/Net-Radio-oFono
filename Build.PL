@@ -4,10 +4,10 @@ use warnings;
 use Module::Build;
 
 my $builder = Module::Build->new(
-    module_name         => 'Net::oFono',
+    module_name         => 'Net::Radio::oFono',
     license             => 'perl',
     dist_author         => q{Jens Rehsack <rehsack@cpan.org>},
-    dist_version_from   => 'lib/Net/oFono.pm',
+    dist_version_from   => 'lib/Net/Radio/oFono.pm',
     build_requires => {
                         'Test::More'         => '0.90',
     },

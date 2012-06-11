@@ -1,4 +1,4 @@
-package Net::oFono::SimManager;
+package Net::Radio::oFono::SimManager;
 
 use 5.010;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::oFono::SimManager
+Net::Radio::oFono::SimManager
 
 =cut
 
@@ -15,7 +15,7 @@ our $VERSION = '0.001';
 use Carp qw/croak/;
 use Net::DBus qw(:typing);
 
-use base qw(Net::oFono::Modem);
+use base qw(Net::Radio::oFono::Modem);
 
 use Data::Dumper;
 
@@ -25,9 +25,9 @@ Quick summary of what the module does.
 
 Perhaps a little code snippet.
 
-    use Net::oFono::Manager;
+    use Net::Radio::oFono::Manager;
 
-    my $oMgr = Net::oFono::Manager->new();
+    my $oMgr = Net::Radio::oFono::Manager->new();
     my @modems = $oMgr->GetModems();
     my ($mcc, $mnc, $lac, ...) = $
 

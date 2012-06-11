@@ -1,4 +1,4 @@
-package Net::oFono::Helpers::Container;
+package Net::Radio::oFono::Helpers::Container;
 
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Scalar::Util qw(blessed refaddr);
 
 =head1 NAME
 
-Net::oFono::Helpers::Container - simple container providing typical container functions
+Net::Radio::oFono::Helpers::Container - simple container providing typical container functions
 
 =head1 DESCRIPTION
 
@@ -22,7 +22,7 @@ type.
 
 =head1 INHERITANCE
 
-  Net::oFono::Helpers::Container
+  Net::Radio::oFono::Helpers::Container
 
 =head1 METHODS
 

@@ -1,4 +1,4 @@
-package Net::oFono::Helpers::IteratableContainer;
+package Net::Radio::oFono::Helpers::IteratableContainer;
 
 use strict;
 use warnings;
@@ -16,12 +16,12 @@ use overload
 
 =head1 NAME
 
-Net::oFono::Helpers::IteratableContainer - simple container allows iterating over contained elements
+Net::Radio::oFono::Helpers::IteratableContainer - simple container allows iterating over contained elements
 
 =head1 DESCRIPTION
 
 This package implements a class which will act as a container for items of
-any type. In addition to Net::oFono::Helpers::Container it allows iterating
+any type. In addition to Net::Radio::oFono::Helpers::Container it allows iterating
 over it's content.
 
 Per default following operators to the container instances are overloaded:
@@ -61,8 +61,8 @@ Returns the currently selected item in an iteration.
 
 =head1 INHERITANCE
 
-  Net::oFono::Helpers::IteratableContainer
-  ISA Net::oFono::Helpers::Container
+  Net::Radio::oFono::Helpers::IteratableContainer
+  ISA Net::Radio::oFono::Helpers::Container
 
 =head1 METHODS
 

@@ -1,4 +1,4 @@
-package Net::oFono::NetworkRegistration;
+package Net::Radio::oFono::RadioSettings;
 
 use 5.010;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::oFono::NetworkRegistration
+Net::Radio::oFono::RadioSettings
 
 =cut
 
@@ -14,7 +14,7 @@ our $VERSION = '0.001';
 
 use Net::DBus qw(:typing);
 
-use base qw(Net::oFono::Modem);
+use base qw(Net::Radio::oFono::Modem);
 
 use Data::Dumper;
 
@@ -24,9 +24,9 @@ Quick summary of what the module does.
 
 Perhaps a little code snippet.
 
-    use Net::oFono::Manager;
+    use Net::Radio::oFono::Manager;
 
-    my $oMgr = Net::oFono::Manager->new();
+    my $oMgr = Net::Radio::oFono::Manager->new();
     my @modems = $oMgr->GetModems();
     my ($mcc, $mnc, $lac, ...) = $
 
@@ -40,7 +40,7 @@ sub _init
 {
     my $self = $_[0];
     my $bus  = Net::DBus->system();
-    $self->{remote_obj} = $bus->get_service("org.ofono")->get_object( $self->{modem_path}, "org.ofono.NetworkRegistration" );
+    $self->{remote_obj} = $bus->get_service("org.ofono")->get_object( $self->{modem_path}, "org.ofono.RadioSettings" );
 
     my $on_property_changed = sub { return $self->onPropertyChanged(@_); };
     $self->{sig_property_changed} =
@@ -58,29 +58,6 @@ sub DESTROY
     undef $self->{remote_obj};
 
     return;
-}
-
-sub Register
-{
-    my ($self) = @_;
-
-    $self->{nwreg}->Register();
-
-    return;
-}
-
-sub GetOperators
-{
-    my ($self) = @_;
-
-    return $self->{nwreg}->GetOperators();
-}
-
-sub Scan
-{
-    my ($self) = @_;
-
-    return $self->{nwreg}->Scan();
 }
 
 1;
