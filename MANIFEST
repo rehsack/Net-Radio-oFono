@@ -8,6 +8,7 @@ lib/Net/Radio/oFono/Helpers/Container.pm
 lib/Net/Radio/oFono/Helpers/EventMgr.pm
 lib/Net/Radio/oFono/Helpers/IteratableContainer.pm
 lib/Net/Radio/oFono/Manager.pm
+lib/Net/Radio/oFono/Message.pm
 lib/Net/Radio/oFono/MessageManager.pm
 lib/Net/Radio/oFono/MessageWaiting.pm
 lib/Net/Radio/oFono/Modem.pm
@@ -16,6 +17,7 @@ lib/Net/Radio/oFono/NetworkRegistration.pm
 lib/Net/Radio/oFono/RadioSettings.pm
 lib/Net/Radio/oFono/Roles/Manager.pm
 lib/Net/Radio/oFono/Roles/Properties.pm
+lib/Net/Radio/oFono/Roles/RemoteObj.pm
 lib/Net/Radio/oFono/SimManager.pm
 MANIFEST
 README
