@@ -37,32 +37,6 @@ Perhaps a little code snippet.
 
 =cut
 
-sub _init
-{
-    my $self = $_[0];
-    my $bus  = Net::DBus->system();
-    $self->{remote_obj} =
-      $bus->get_service("org.ofono")->get_object( $self->{modem_path}, "org.ofono.SimManager" );
-
-    my $on_property_changed = sub { return $self->onPropertyChanged(@_); };
-    $self->{sig_property_changed} =
-      $self->{remote_obj}->connect_to_signal( "PropertyChanged", $on_property_changed );
-
-    return;
-}
-
-sub DESTROY
-{
-    my $self = $_[0];
-
-    defined($self->{remote_obj}) and
-    $self->{remote_obj}->disconnect_from_signal( "PropertyChanged", $self->{sig_property_changed} );
-
-    undef $self->{remote_obj};
-
-    return;
-}
-
 my @valid_pin_types = (
                         qw(none pin phone firstphone pin2 network netsub service corp puk),
                         qw(firstphonepuk puk2 networkpuk netsubpuk servicepuk corppuk)

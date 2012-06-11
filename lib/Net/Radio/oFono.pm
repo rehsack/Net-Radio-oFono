@@ -15,7 +15,12 @@ our $VERSION = '0.001';
 use Net::Radio::oFono::Manager;
 use Net::Radio::oFono::Modem;
 use Net::Radio::oFono::SimManager;
+use Net::Radio::oFono::RadioSettings;
 use Net::Radio::oFono::NetworkRegistration;
+use Net::Radio::oFono::ConnectionManager;
+use Net::Radio::oFono::MessageManager;
+use Net::Radio::oFono::MessageWaiting;
+use Net::Radio::oFono::CellBroadcast;
 
 use Log::Any qw($log);
 

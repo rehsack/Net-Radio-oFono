@@ -1,4 +1,4 @@
-package Net::Radio::oFono::NetworkRegistration;
+package Net::Radio::oFono::ConnectionManager;
 
 use 5.010;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::NetworkRegistration
+Net::Radio::oFono::ConnectionManager
 
 =cut
 
@@ -14,9 +14,9 @@ our $VERSION = '0.001';
 
 use Net::DBus qw(:typing);
 
-require Net::Radio::oFono::NetworkOperator;
+require Net::Radio::oFono::ConnectionContext;
 
-use Net::Radio::oFono::Roles::Manager qw(Operator);
+use Net::Radio::oFono::Roles::Manager qw(Context);
 use base qw(Net::Radio::oFono::Modem Net::Radio::oFono::Roles::Manager);
 
 use Data::Dumper;
@@ -35,6 +35,8 @@ Perhaps a little code snippet.
 
 =head1 METHODS
 
+=head2 new
+
 =cut
 
 sub _init
@@ -46,7 +48,7 @@ sub _init
     # initialize base class
     $self->Net::Radio::oFono::Modem::_init( $obj_path );
     # initialize role
-    $self->Net::Radio::oFono::Roles::Manager::_init( "Operator", "NetworkOperator" );
+    $self->Net::Radio::oFono::Roles::Manager::_init( "Context", "ConnectionContext" );
 
     return;
 }
@@ -63,20 +65,42 @@ sub DESTROY
     return;
 }
 
-sub Register
+sub DeactivateAll
 {
-    my ($self) = @_;
+    my $self = $_[0];
 
-    $self->{remote_obj}->Register();
+    $self->{remote_obj}->DeactivateAll();
 
     return;
 }
 
-sub Scan
+sub AddContext
 {
-    my ($self) = @_;
+    my ( $self, $type ) = @_;
 
-    return $self->{remote_obj}->Scan();
+    return $self->{remote_obj}->AddContext( dbus_string($type) );
 }
+
+sub RemoveContext
+{
+    my ( $self, $obj_path ) = @_;
+
+    $self->{remote_obj}->RemoveContext( dbus_object_path($obj_path) );
+
+    return;
+}
+
+#sub RemoveAllContexts
+#{
+#    my ( $self ) = @_;
+#
+#    my @context_obj_paths = keys %{$self->{contexts}};
+#    foreach my $cop (@context_obj_paths)
+#    {
+#	$self->{remote_obj}->RemoveContext( dbus_object_path($cop) );
+#    }
+#
+#    return;
+#}
 
 1;

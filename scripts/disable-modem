@@ -3,4 +3,4 @@
 use strict;
 use warnings;
 
-use Net::oFono;
+use Net::Radio::oFono;

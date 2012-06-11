@@ -1,4 +1,4 @@
-package Net::Radio::oFono::RadioSettings;
+package Net::Radio::oFono::MessageWaiting;
 
 use 5.010;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::RadioSettings
+Net::Radio::oFono::MessageWaiting
 
 =cut
 

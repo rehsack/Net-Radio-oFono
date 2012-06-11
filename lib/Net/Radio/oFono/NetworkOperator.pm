@@ -1,4 +1,4 @@
-package Net::Radio::oFono::Manager;
+package Net::Radio::oFono::NetworkOperator;
 
 use 5.010;
 use strict;
@@ -6,16 +6,16 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::Manager - Perl API to oFono's Modem Manager
+Net::Radio::oFono::NetworkOperator
 
 =cut
 
 our $VERSION = '0.001';
 
-use Net::Radio::oFono::Roles::Manager qw(Modem); # injects GetModem(s) etc.
-use base qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Manager);
-
 use Net::DBus qw(:typing);
+
+# R/O
+use base qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Properties);
 
 use Data::Dumper;
 
@@ -39,24 +39,27 @@ Perhaps a little code snippet.
 
 sub new
 {
-    my ($class, %events) = @_;
+    my ( $class, $obj_path, %events ) = @_;
 
     my $self = $class->SUPER::new(%events);
 
     bless( $self, $class );
 
-    $self->_init();
+    $self->_init($obj_path);
+    $self->GetProperties(1);
 
     return $self;
 }
 
 sub _init
 {
-    my $self = $_[0];
+    my ($self, $obj_path) = @_;
+
+    (my $interface = ref($self)) =~ s/Net::Radio::oFono:://;
 
     # initialize roles
-    $self->Net::Radio::oFono::Roles::RemoteObj::_init( "/", "org.ofono.Manager" );
-    $self->Net::Radio::oFono::Roles::Manager::_init( "Modem" );
+    $self->Net::Radio::oFono::Roles::RemoteObj::_init( $obj_path, "org.ofono.$interface" );
+    $self->Net::Radio::oFono::Roles::Properties::_init();
 
     return;
 }
@@ -66,7 +69,7 @@ sub DESTROY
     my $self = $_[0];
 
     # destroy roles
-    $self->Net::Radio::oFono::Roles::Manager::DESTROY();
+    $self->Net::Radio::oFono::Roles::Properties::DESTROY();
     $self->Net::Radio::oFono::Roles::RemoteObj::DESTROY();
 
     # destroy base class
@@ -74,11 +77,5 @@ sub DESTROY
 
     return;
 }
-
-=head2 GetModems
-
-=head2 GetModem
-
-=cut
 
 1;

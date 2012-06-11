@@ -5,7 +5,7 @@ use warnings;
 
 use 5.010;
 
-use Net::oFono;
+use Net::Radio::oFono;
 
 use Net::DBus qw(:typing);
 
@@ -79,7 +79,7 @@ sub on_modem_features_changed
     return;
 }
 
-my $oFono = Net::oFono->new(
+my $oFono = Net::Radio::oFono->new(
                              "ON_MODEM_ADDED"                    => \&on_modem_added,
                              "ON_MODEM_PROPERTY_POWERED_CHANGED" => \&on_modem_power_changed,
 			     "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" => \&on_simmgr_pin_required,
