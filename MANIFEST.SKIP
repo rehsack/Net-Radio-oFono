@@ -101,6 +101,9 @@
 \.Inline/.*
 _Inline/.*
 
+# Avoid log files
+\.log$
+
 # Avoid compiled files
 \.o$
 \.bs$
