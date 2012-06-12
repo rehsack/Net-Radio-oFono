@@ -3,7 +3,7 @@
 use Test::More tests => 1;
 
 BEGIN {
-    use_ok( 'Net::oFono' ) || print "Bail out!\n";
+    use_ok( 'Net::Radio::oFono' ) || print "Bail out!\n";
 }
 
-diag( "Testing Net::oFono $Net::oFono::VERSION, Perl $], $^X" );
+diag( "Testing Net::Radio::oFono $Net::Radio::oFono::VERSION, Perl $], $^X" );
