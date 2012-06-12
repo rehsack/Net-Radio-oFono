@@ -81,7 +81,7 @@ sub _adjust_iter_idx
     return;
 }
 
-=head2
+=head2 remove
 
 Removes an item from the container.
 
@@ -114,6 +114,12 @@ sub remove
     return wantarray ? ( $elem, $idx ) : $elem;
 }
 
+=head2 decrease_by
+
+Invoked via overloaded -= operator.
+
+=cut
+
 sub decrease_by
 {
     my $self = shift;
@@ -121,6 +127,12 @@ sub decrease_by
     $self->{iteratorIndex} < 0 and $self->{iteratorIndex} = 0;
     return $self;
 }
+
+=head2 increase_by
+
+Invoked via overloaded += operator.
+
+=cut
 
 sub increase_by
 {
@@ -131,7 +143,19 @@ sub increase_by
     return $self;
 }
 
+=head2 as_array
+
+Invoked by overloaded @{} operator.
+
+=cut
+
 sub as_array() { $_[0]->{elements}; }
+
+=head2 iterate
+
+Invoked by overloaded <> operator.
+
+=cut
 
 sub iterate()
 {
@@ -155,6 +179,16 @@ sub iterate()
 
     return $elem;
 }
+
+=head2 n_elements
+
+Returns the number of elements contained.
+
+=head2 curr_item
+
+Invoked by overloaded ${} operator.
+
+=cut
 
 sub curr_item()
 {

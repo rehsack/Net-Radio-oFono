@@ -6,7 +6,12 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::Roles::RemoteObj
+Net::Radio::oFono::Roles::RemoteObj - lifecycle management for remote oFono objects
+
+=head1 DESCRIPTION
+
+This package provides a role for being added to classes which need to access
+remote dbus objects of oFono.
 
 =cut
 
@@ -21,19 +26,58 @@ use Log::Any qw($log);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+Provides remote object lifecycle control for oFono objects/interfaces.
 
-Perhaps a little code snippet.
+    package Net::Radio::oFono::NewInterface;
 
-    use Net::Radio::oFono::Manager;
+    use base qw(Net::Radio::oFono::Helpers::EventMgr? Net::Radio::oFono::Roles::RemoteObj ...);
 
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+    use Net::DBus qw(:typing);
+
+    sub new
+    {
+	my ( $class, %events ) = @_;
+
+	my $self = $class->SUPER::new(%events); # SUPER::new finds first - so EventMgr::new
+
+	bless( $self, $class );
+
+	$self->_init();
+
+	return $self;
+    }
+
+    sub _init
+    {
+	my $self = $_[0];
+
+	# initialize roles
+	$self->Net::Radio::oFono::Roles::RemoteObj::_init( "/modem_0", "org.ofono.NewInterface" ); # must be first one
+	...
+
+	return;
+    }
+
+    sub DESTROY
+    {
+	my $self = $_[0];
+
+	# destroy roles
+	...
+	$self->Net::Radio::oFono::Roles::RemoteObj::DESTROY(); # must be last one
+
+	# destroy base class
+	$self->Net::Radio::oFono::Helpers::EventMgr::DESTROY();
+
+	return;
+    }
 
 =head1 METHODS
 
-=head2 new
+=head2 _init
+
+Called to initialize the object. Expects remote object path and interface
+name (like L<Net::DBus::RemoteObject>).
 
 =cut
 
@@ -48,6 +92,12 @@ sub _init
 
     return;
 }
+
+=head2 obj_path
+
+Returns the DBus object path of the managed remote object
+
+=cut
 
 sub obj_path
 {

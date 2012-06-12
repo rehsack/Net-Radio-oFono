@@ -130,7 +130,7 @@ sub _move_between
     return $elem;
 }
 
-=head2
+=head2 remove
 
 Removes an item from the container.
 

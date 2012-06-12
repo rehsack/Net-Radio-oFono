@@ -96,7 +96,7 @@ is reached.
 
 B<Parameters>:
 
-This constructor expects following parameters in order of appearance:
+Expects following parameters in order of appearance:
 
 =over 8
 
@@ -164,6 +164,38 @@ sub add_event
     return $self;
 }
 
+=head2 remove_event
+
+Removed a previously added event handler from the list of actions to be
+executed when an event point is reached.
+
+B<Parameters>:
+
+Expects following parameters in order of appearance:
+
+=over 8
+
+=item string
+
+The name of the event for this callback.
+
+=item coderef
+
+Specifies a code reference which should be called when the event is triggered.
+The parameters passed to the callback are:
+
+=over 12
+
+=item *
+
+C<$memo> when specified
+
+=back
+
+=back
+
+=cut
+
 sub remove_event
 {
     my ( $self, $event, $func, $memo ) = @_;
@@ -193,7 +225,7 @@ discarded.
 
 B<Parameters>:
 
-This constructor expects following parameters in order of appearance:
+Expects following parameters in order of appearance:
 
 =over 8
 

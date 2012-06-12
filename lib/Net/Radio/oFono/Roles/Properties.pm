@@ -6,7 +6,13 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::Modem
+Net::Radio::oFono::Roles::Properties - generic property access for remote oFono objects
+
+=head1 DESCRIPTION
+
+This package provides a role for being added to classes which need to access
+properties of remote dbus objects of oFono. Currently no separate role for
+read-only access is available.
 
 =cut
 
@@ -21,19 +27,75 @@ use Log::Any qw($log);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+    package Net::Radio::oFono::NewInterface;
 
-Perhaps a little code snippet.
+    use base qw(Net::Radio::oFono::Helpers::EventMgr? Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Properties ...);
 
-    use Net::Radio::oFono::Manager;
+    use Net::DBus qw(:typing);
 
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+    sub new
+    {
+	my ( $class, %events ) = @_;
+
+	my $self = $class->SUPER::new(%events); # SUPER::new finds first - so EventMgr::new
+
+	bless( $self, $class );
+
+	$self->_init();
+
+	return $self;
+    }
+
+    sub _init
+    {
+	my $self = $_[0];
+
+	# initialize roles
+	$self->Net::Radio::oFono::Roles::RemoteObj::_init( "/modem_0", "org.ofono.NewInterface" ); # must be first one
+	$self->Net::Radio::oFono::Roles::Properties::_init();
+	...
+
+	return;
+    }
+
+    sub DESTROY
+    {
+	my $self = $_[0];
+
+	# destroy roles
+	...
+	$self->Net::Radio::oFono::Roles::Properties::DESTROY(); # must be last one
+	$self->Net::Radio::oFono::Roles::RemoteObj::DESTROY(); # must be last one
+
+	# destroy base class
+	$self->Net::Radio::oFono::Helpers::EventMgr::DESTROY();
+
+	return;
+    }
+
+=head1 EVENTS
+
+Following events are triggered by this role:
+
+=over 4
+
+=item ON_PROPERTY_CHANGED
+
+Triggered when a property has been changed. Submits the name of the
+changed property to the listener.
+
+=item ON_PEROPERTY_ . uc($property_name) . _CHANGED
+
+Triggered when a property has been changed. Submits the value of the
+changed property to the listener.
+
+=back
 
 =head1 METHODS
 
-=head2 new
+=head2 _init
+
+Initializes the properties api (connects to PropertyChanged signal of remote object).
 
 =cut
 
@@ -50,11 +112,6 @@ sub _init
     return;
 }
 
-sub obj_path
-{
-    return $_[0]->{obj_path};
-}
-
 sub DESTROY
 {
     my $self = $_[0];
@@ -66,6 +123,25 @@ sub DESTROY
     return;
 }
 
+=head2 onPropertyChanged
+
+Callback method used when the signal C<PropertyChanged> is received.
+Can be overwritten to implement other or enhanced behavior.
+
+=over 4
+
+=item *
+
+Updates properties cache
+
+=item *
+
+Triggers signals on property change
+
+=back
+
+=cut
+
 sub onPropertyChanged
 {
     my ( $self, $property, $value ) = @_;
@@ -74,6 +150,26 @@ sub onPropertyChanged
     $self->trigger_event( "ON_PROPERTY_" . uc($property) . "_CHANGED", $value );
     return;
 }
+
+=head2 GetProperties(;$force)
+
+Returns the properties of the remote object.
+
+When invoked with a true value as first argument, the properties are
+refreshed from the remote object.
+
+Returns the properties hash in array more and the reference to the
+properties hash in scalar mode.
+
+=over 8
+
+=item B<TODO>
+
+Return cloned properties to avoid dirtying the local cache ...
+
+=back
+
+=cut
 
 sub GetProperties
 {
@@ -84,6 +180,15 @@ sub GetProperties
     return wantarray ? %{ $self->{properties} } : $self->{properties};
 }
 
+=head2 GetProperty($property_name;$force)
+
+Returns the requested property of the remote object.
+
+When invoked with a true value as second argument, the properties are
+refreshed from the remote object.
+
+=cut
+
 sub GetProperty
 {
     my ( $self, $property, $force ) = @_;
@@ -93,12 +198,29 @@ sub GetProperty
     return $self->{properties}->{$property};
 }
 
+=head2 SetProperty($property_name,$new_value)
+
+Sets the specified property of the remote object to the specified value.
+Note that some values needs special encapsulation using dbus_I<type>().
+The property name is automatically encapsulated using C<dbus_string>.
+
+See the appropriate interface documentation in oFono to learn the
+types to use.
+
+=cut
+
 sub SetProperty
 {
     my ( $self, $property, $value ) = @_;
 
     return $self->{remote_obj}->SetProperty( dbus_string($property), $value );
 }
+
+=head2 SetProperties(%property_hash)
+
+Sets all specified properties using L</SetProperty>.
+
+=cut
 
 sub SetProperties
 {

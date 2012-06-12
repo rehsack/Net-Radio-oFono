@@ -8,6 +8,11 @@ use warnings;
 
 Net::Radio::oFono::Roles::Manager - Role for Interfaces which manages objects
 
+=head1 DESCRIPTION
+
+This package provides a role for being added to classes which need to manages
+embedded remote objects in remote dbus object.
+
 =cut
 
 our $VERSION = '0.001';
@@ -22,11 +27,86 @@ use Log::Any qw($log);
 
 =head1 SYNOPSIS
 
-...
+    package Net::Radio::oFono::NewInterface;
+
+    use Net::Radio::oFono::Roles::Manager qw(Embed);
+    use base qw(Net::Radio::oFono::Helpers::EventMgr? Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Manager ...);
+
+    use Net::DBus qw(:typing);
+
+    sub new
+    {
+	my ( $class, %events ) = @_;
+
+	my $self = $class->SUPER::new(%events); # SUPER::new finds first - so EventMgr::new
+
+	bless( $self, $class );
+
+	$self->_init();
+
+	return $self;
+    }
+
+    sub _init
+    {
+	my $self = $_[0];
+
+	# initialize roles
+	$self->Net::Radio::oFono::Roles::RemoteObj::_init( "/modem_0", "org.ofono.NewInterface" ); # must be first one
+	$self->Net::Radio::oFono::Roles::Manager::_init( "Embed", "NewEmbed" );
+	...
+
+	return;
+    }
+
+    sub DESTROY
+    {
+	my $self = $_[0];
+
+	# destroy roles
+	...
+	$self->Net::Radio::oFono::Roles::Manager::DESTROY(); # must be last one
+	$self->Net::Radio::oFono::Roles::RemoteObj::DESTROY(); # must be last one
+
+	# destroy base class
+	$self->Net::Radio::oFono::Helpers::EventMgr::DESTROY();
+
+	return;
+    }
+
+=head1 EVENTS
+
+Following events are triggered by this role:
+
+=over 4
+
+=item ON_ . uc($type) . _ADDED
+
+Triggered when a new object of specified type was added.
+
+=item ON_ . uc($type) . _REMOVED
+
+Triggered when an object of specified type is removed.
+
+=back
 
 =head1 FUNCTIONS
 
-=head2 manages_objects_of
+=head2 import
+
+When invoked, getters for embedded objects are injected into caller's
+namespace using the generic L</GetObjects> and L</GetObject>.
+
+Using the MessageManager example:
+
+    package Net::Radio::oFono::MessageManager;
+    ...
+    use Net::Radio::oFono::Roles::Manager qw(Message);
+
+Injects C<GetMessages> and C<GetMessage> into
+Net::Radio::oFono::MessageManager,
+using C<GetObjects> for C<GetMessages> and
+C<GetObject> for C<GetMessage>.
 
 =cut
 
@@ -62,6 +142,20 @@ EOC
 
 =head1 METHODS
 
+=head2 _init($type;$interface)
+
+Initializes the manager role of the object.
+
+C<$type> and $<$interface> are the spoken type of the embedded object
+(for signals, events) and the remote interface name (without the
+C<org.ofono.> prefix).
+
+If no interface is named, the spoken type is used as interface name
+(which is pretty common, like for Modem or Message).
+
+The initialization connects to the signals C<${type}Added> and
+C<${type}Removed> provided by oFono's manager objects.
+
 =cut
 
 sub _init
@@ -86,6 +180,15 @@ sub _init
     return;
 }
 
+=sub DESTROY
+
+Frees previously aquired resources like connected signals, list of managed
+objects (object_path).
+
+Must be invoked before the RemoteObject role frees it's resources ...
+
+=cut
+
 sub DESTROY
 {
     my $self = $_[0];
@@ -103,7 +206,24 @@ sub DESTROY
     return;
 }
 
-=head2 GetObjects
+=head2 GetObjects(;$force)
+
+Returns the managed objects of the remote object as hash with the
+object path as key and the properties dictionary (hash) as value.
+
+When invoked with a true value as first argument, the managed
+object list is refreshed from the remote object.
+
+Returns the object hash in array more and the reference to the
+object hash in scalar mode.
+
+=over 8
+
+=item B<TODO>
+
+Return cloned objects to avoid dirtying the local cache ...
+
+=back
 
 =cut
 
@@ -128,7 +248,14 @@ sub GetObjects
     return wantarray ? %{ $self->{mgmt_objects} } : $self->{mgmt_objects};
 }
 
-=head2 GetObject
+=head2 GetObject($object_path;$force)
+
+Returns an instance of the managed object interface identified by the specified
+object path.
+
+Take above example for C<MessageManager>, this method will return instances of
+C<net::Radio::oFono::Message> using the /{modem0,modem1,...}/{message_01,...}
+object path.
 
 =cut
 
@@ -144,6 +271,25 @@ sub GetObject
     return $objClass->new($obj_path);
 }
 
+=head2 onObjectAdded
+
+Callback method used when the signal C<..Added> is received.
+Can be overwritten to implement other or enhanced behavior.
+
+=over 4
+
+=item *
+
+Updates properties cache
+
+=item *
+
+Triggers event for added object
+
+=back
+
+=cut
+
 sub onObjectAdded
 {
     my ( $self, $obj_path, $properties ) = @_;
@@ -153,6 +299,25 @@ sub onObjectAdded
 
     return;
 }
+
+=head2 onObjectRemoved
+
+Callback method used when the signal C<..Removed> is received.
+Can be overwritten to implement other or enhanced behavior.
+
+=over 4
+
+=item *
+
+Updates properties cache
+
+=item *
+
+Triggers event for removed object
+
+=back
+
+=cut
 
 sub onObjectRemoved
 {

@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::Manager - Perl API to oFono's Modem Manager
+Net::Radio::oFono::Manager - access to oFono's Manager objects
 
 =cut
 
@@ -20,19 +20,23 @@ use Net::DBus qw(:typing);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+Provides access to oFono's Modem Manager object (org.ofono.Manager interface).
 
-Perhaps a little code snippet.
+  use Net::Radio::oFono::Manager;
+  ...
+  my $manager = Net::Radio::oFono::Manager->new(
+    ON_MODEM_ADDED   => \&on_modem_added,
+    ON_MODEM_REMOVED => \&on_modem_removed,
+  );
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+Usually L<Net::Radio::oFono> does all of it for you, including modem
+management and interface instantiation.
 
 =head1 METHODS
 
-=head2 new
+=head2 new(;%events)
+
+Instantiates new modem manager.
 
 =cut
 
@@ -48,6 +52,12 @@ sub new
 
     return $self;
 }
+
+=head2 init()
+
+Initialized RemoteObj and Manager roles.
+
+=cut
 
 sub _init
 {
@@ -74,9 +84,13 @@ sub DESTROY
     return;
 }
 
-=head2 GetModems
+=head2 GetModems(;$force)
 
-=head2 GetModem
+Alias for L<Net::Radio::oFono::Roles::Manager/GetObjects>.
+
+=head2 GetModem($object_path;$force)
+
+Alias for L<Net::Radio::oFono::Roles::Manager/GetObject>.
 
 =cut
 
