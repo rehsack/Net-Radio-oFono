@@ -19,8 +19,6 @@ use Net::DBus qw(:typing);
 
 use Log::Any qw($log);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 Quick summary of what the module does.
@@ -41,9 +39,9 @@ Perhaps a little code snippet.
 
 sub _init
 {
-    my ($self, $obj_path, $iface) = @_;
+    my ( $self, $obj_path, $iface ) = @_;
 
-    my $bus  = Net::DBus->system();
+    my $bus = Net::DBus->system();
 
     $self->{obj_path} = $obj_path;
     $self->{remote_obj} = $bus->get_service("org.ofono")->get_object( $obj_path, $iface );

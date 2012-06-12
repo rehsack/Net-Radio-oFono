@@ -19,8 +19,6 @@ require Net::Radio::oFono::NetworkOperator;
 use Net::Radio::oFono::Roles::Manager qw(Operator);
 use base qw(Net::Radio::oFono::Modem Net::Radio::oFono::Roles::Manager);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 Quick summary of what the module does.
@@ -39,12 +37,12 @@ Perhaps a little code snippet.
 
 sub _init
 {
-    my ($self, $obj_path) = @_;
+    my ( $self, $obj_path ) = @_;
 
-    (my $interface = ref($self)) =~ s/Net::Radio::oFono:://;
+    ( my $interface = ref($self) ) =~ s/Net::Radio::oFono:://;
 
     # initialize base class
-    $self->Net::Radio::oFono::Modem::_init( $obj_path );
+    $self->Net::Radio::oFono::Modem::_init($obj_path);
     # initialize role
     $self->Net::Radio::oFono::Roles::Manager::_init( "Operator", "NetworkOperator" );
 

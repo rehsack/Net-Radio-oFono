@@ -20,8 +20,6 @@ use Carp qw/croak/;
 
 use Log::Any qw($log);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 ...
@@ -34,14 +32,14 @@ use Data::Dumper;
 
 sub import
 {
-    my ($pkg, $type) = @_;
+    my ( $pkg, $type ) = @_;
     my $caller = caller;
 
-    if( defined( $type ) && !($caller->can("Get${type}")) )
+    if ( defined($type) && !( $caller->can("Get${type}") ) )
     {
-	$pkg = __PACKAGE__; # avoid inheritance confusion
+        $pkg = __PACKAGE__;    # avoid inheritance confusion
 
-	my $code = <<"EOC";
+        my $code = <<"EOC";
 package $caller;
 
 sub Get${type}s
@@ -56,7 +54,7 @@ sub Get${type}
 
 1;
 EOC
-	eval $code or die "Can't inject provides-API";
+        eval $code or die "Can't inject provides-API";
     }
 
     return 1;
@@ -68,18 +66,20 @@ EOC
 
 sub _init
 {
-    my ($self, $type, $interface) = @_;
+    my ( $self, $type, $interface ) = @_;
 
     $interface //= $type;
-    $self->{mgmt_type} = $type;
-    $self->{MGMT_TYPE} = uc($type);
+    $self->{mgmt_type}      = $type;
+    $self->{MGMT_TYPE}      = uc($type);
     $self->{mgmt_interface} = $interface;
 
     my $on_obj_added = sub { return $self->onObjectAdded(@_); };
-    $self->{sig_obj_added} = $self->{remote_obj}->connect_to_signal( "${type}Added", $on_obj_added );
+    $self->{sig_obj_added} =
+      $self->{remote_obj}->connect_to_signal( "${type}Added", $on_obj_added );
 
     my $on_obj_removed = sub { return $self->onObjectRemoved(@_); };
-    $self->{sig_obj_removed} = $self->{remote_obj}->connect_to_signal( "${type}Removed", $on_obj_removed );
+    $self->{sig_obj_removed} =
+      $self->{remote_obj}->connect_to_signal( "${type}Removed", $on_obj_removed );
 
     $self->GetObjects(1);
 
@@ -93,8 +93,10 @@ sub DESTROY
     my $type = $self->{mgmt_type};
     $type or croak "Please use ogd";
 
-    defined($self->{remote_obj}) and $self->{manager}->disconnect_from_signal( "${type}Added",   $self->{sig_obj_added} );
-    defined($self->{remote_obj}) and $self->{manager}->disconnect_from_signal( "${type}Removed", $self->{sig_obj_removed} );
+    defined( $self->{remote_obj} )
+      and $self->{manager}->disconnect_from_signal( "${type}Added", $self->{sig_obj_added} );
+    defined( $self->{remote_obj} )
+      and $self->{manager}->disconnect_from_signal( "${type}Removed", $self->{sig_obj_removed} );
 
     undef $self->{mgmt_objects};
 
@@ -111,7 +113,7 @@ sub GetObjects
 
     if ($force)
     {
-	my $getter = "Get" . $self->{mgmt_type} . "s";
+        my $getter  = "Get" . $self->{mgmt_type} . "s";
         my @obj_lst = @{ $self->{remote_obj}->$getter() };
         my %mgmt_objects;
 
@@ -139,7 +141,7 @@ sub GetObject
     my $objClass = "Net::Radio::oFono::" . $self->{mgmt_interface};
     # check for package first, but Package::Util is just a reserved name and Module::Util is to stupid
     # probably $objClass->DOES($typical_role) is a way out, but it's not really the same ...
-    return $objClass->new( $obj_path );
+    return $objClass->new($obj_path);
 }
 
 sub onObjectAdded
@@ -147,7 +149,7 @@ sub onObjectAdded
     my ( $self, $obj_path, $properties ) = @_;
 
     $self->{mgmt_objects}->{$obj_path} = $properties;
-    $self->trigger_event("ON_" . $self->{MGMT_TYPE} . "_ADDED", $obj_path);
+    $self->trigger_event( "ON_" . $self->{MGMT_TYPE} . "_ADDED", $obj_path );
 
     return;
 }
@@ -157,7 +159,7 @@ sub onObjectRemoved
     my ( $self, $obj_path ) = @_;
 
     delete $self->{mgmt_objects}->{$obj_path};
-    $self->trigger_event("ON_" . $self->{MGMT_TYPE} . "_REMOVED", $obj_path);
+    $self->trigger_event( "ON_" . $self->{MGMT_TYPE} . "_REMOVED", $obj_path );
 
     return;
 }

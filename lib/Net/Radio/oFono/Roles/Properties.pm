@@ -19,8 +19,6 @@ use Net::DBus qw(:typing);
 
 use Log::Any qw($log);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 Quick summary of what the module does.
@@ -61,8 +59,9 @@ sub DESTROY
 {
     my $self = $_[0];
 
-    defined($self->{remote_obj}) and 
-    $self->{remote_obj}->disconnect_from_signal( "PropertyChanged", $self->{sig_property_changed} );
+    defined( $self->{remote_obj} )
+      and $self->{remote_obj}
+      ->disconnect_from_signal( "PropertyChanged", $self->{sig_property_changed} );
 
     return;
 }
@@ -71,8 +70,8 @@ sub onPropertyChanged
 {
     my ( $self, $property, $value ) = @_;
     $self->{properties}->{$property} = $value;
-    $self->trigger_event("ON_PROPERTY_CHANGED", $property);
-    $self->trigger_event("ON_PROPERTY_" . uc($property) . "_CHANGED", $value);
+    $self->trigger_event( "ON_PROPERTY_CHANGED",                       $property );
+    $self->trigger_event( "ON_PROPERTY_" . uc($property) . "_CHANGED", $value );
     return;
 }
 

@@ -25,9 +25,9 @@ sub on_modem_added
 {
     my ( $ofono, $event, $modem_path ) = @_;
 
-    my $modem = $ofono->get_modem_interface($modem_path, "Modem");
+    my $modem = $ofono->get_modem_interface( $modem_path, "Modem" );
 
-    if ( $modem->GetProperty( "Powered" ) )
+    if ( $modem->GetProperty("Powered") )
     {
         # disable before starting workflow to get a clean start ...
         $modem->SetProperty( "Powered", dbus_boolean(0) );
@@ -46,7 +46,9 @@ sub on_modem_power_changed
     my ( $ofono, $event, $info ) = @_;
     my ( $modem_path, $power_state ) = @$info;
 
-    $power_state or $ofono->get_modem_interface($modem_path, "Modem")->SetProperty( "Powered", dbus_boolean(1) );
+    $power_state
+      or $ofono->get_modem_interface( $modem_path, "Modem" )
+      ->SetProperty( "Powered", dbus_boolean(1) );
 }
 
 sub on_simmgr_pin_required
@@ -56,9 +58,12 @@ sub on_simmgr_pin_required
 
     # we need to enter the pin here
     # XXX maybe add an extra check for ON_SIMMANAGER_PROPERTY_RETRIES_CHANGED // {pin => 3,pin2 => 3,puk => 10,puk2 => 10}
-    $pin_type eq "pin" and $ofono->get_modem_interface($modem_path, "SimManager")->EnterPin("pin", $pin);
+    $pin_type eq "pin"
+      and $ofono->get_modem_interface( $modem_path, "SimManager" )->EnterPin( "pin", $pin );
     # pin accepted
-    $pin_type eq "none" and $ofono->get_modem_interface($modem_path, "Modem")->SetProperty( "Online", dbus_boolean(1) );
+    $pin_type eq "none"
+      and
+      $ofono->get_modem_interface( $modem_path, "Modem" )->SetProperty( "Online", dbus_boolean(1) );
 
     return;
 }
@@ -80,11 +85,11 @@ sub on_modem_features_changed
 }
 
 my $oFono = Net::Radio::oFono->new(
-                             "ON_MODEM_ADDED"                    => \&on_modem_added,
-                             "ON_MODEM_PROPERTY_POWERED_CHANGED" => \&on_modem_power_changed,
-			     "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" => \&on_simmgr_pin_required,
-			     "ON_MODEM_PROPERTY_FEATURES_CHANGED" => \&on_modem_features_changed,
-                           );
+                           "ON_MODEM_ADDED"                             => \&on_modem_added,
+                           "ON_MODEM_PROPERTY_POWERED_CHANGED"          => \&on_modem_power_changed,
+                           "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" => \&on_simmgr_pin_required,
+                           "ON_MODEM_PROPERTY_FEATURES_CHANGED" => \&on_modem_features_changed,
+);
 
 # print Dumper($oFono);
 

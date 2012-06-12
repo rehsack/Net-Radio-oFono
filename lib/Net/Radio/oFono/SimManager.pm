@@ -17,8 +17,6 @@ use Net::DBus qw(:typing);
 
 use base qw(Net::Radio::oFono::Modem);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 Quick summary of what the module does.
@@ -53,7 +51,8 @@ sub ChangePin
                 . join( "', '", @valid_pin_types )
                 . "'." );
 
-    $self->{remote_obj}->ChangePin( dbus_string($pin_type), dbus_string($oldpin), dbus_string($newpin) );
+    $self->{remote_obj}
+      ->ChangePin( dbus_string($pin_type), dbus_string($oldpin), dbus_string($newpin) );
 
     return;
 }

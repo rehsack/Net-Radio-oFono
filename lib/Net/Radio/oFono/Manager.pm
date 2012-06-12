@@ -12,12 +12,11 @@ Net::Radio::oFono::Manager - Perl API to oFono's Modem Manager
 
 our $VERSION = '0.001';
 
-use Net::Radio::oFono::Roles::Manager qw(Modem); # injects GetModem(s) etc.
-use base qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Manager);
+use Net::Radio::oFono::Roles::Manager qw(Modem);    # injects GetModem(s) etc.
+use base
+  qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Manager);
 
 use Net::DBus qw(:typing);
-
-use Data::Dumper;
 
 =head1 SYNOPSIS
 
@@ -39,7 +38,7 @@ Perhaps a little code snippet.
 
 sub new
 {
-    my ($class, %events) = @_;
+    my ( $class, %events ) = @_;
 
     my $self = $class->SUPER::new(%events);
 
@@ -56,7 +55,7 @@ sub _init
 
     # initialize roles
     $self->Net::Radio::oFono::Roles::RemoteObj::_init( "/", "org.ofono.Manager" );
-    $self->Net::Radio::oFono::Roles::Manager::_init( "Modem" );
+    $self->Net::Radio::oFono::Roles::Manager::_init("Modem");
 
     return;
 }

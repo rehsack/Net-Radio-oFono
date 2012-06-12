@@ -36,7 +36,7 @@ This constructor expects a hash containing the named parameters:
 
 =item C<ON_*>
 
-Event handler. See L<addEvent> for further details.
+Event handler. See L<add_event> for further details.
 
 The value for this parameter can be either a code reference, then an
 event without a I<MEMO> item is generated, or a hash reference with
@@ -58,14 +58,7 @@ Memo given to the callback routine when event is triggered.
 
 B<Supported events>:
 
-=over 4
-
-=item ON_DESTROY
-
-Triggered when this event manager is destroyed. No additional information
-are passed to event handler.
-
-=back
+None by default - all added by derived classes ...
 
 =cut
 
@@ -184,7 +177,8 @@ sub remove_event
                  FUNC => $func,
                  MEMO => $memo
                };
-    Net::Radio::oFono::Helpers::EventMgr::Container->_remove_from( $elem, $self->{events}->{$event} );
+    Net::Radio::oFono::Helpers::EventMgr::Container->_remove_from( $elem,
+                                                                   $self->{events}->{$event} );
 
     return $self;
 }
@@ -302,9 +296,10 @@ sub trigger_event
     my ( $self, $event, $info ) = @_;
 
     my $handled = 0;
-    $log and $log->is_debug()
-      and $log->debugf( 'Event <%s> reached for %s ( %s )',
-                        $event, ref($self) || __PACKAGE__, $info );
+    $log
+      and $log->is_debug()
+      and
+      $log->debugf( 'Event <%s> reached for %s ( %s )', $event, ref($self) || __PACKAGE__, $info );
 
     if ( defined( $self->{events}->{$event} ) )
     {
@@ -312,25 +307,24 @@ sub trigger_event
         {
             my @event_params = (
                                  (
-                                    defined( $eventHandler->{MEMO} )
-                                    ? ( $eventHandler->{MEMO} )
+                                    defined( $eventHandler->{MEMO} ) ? ( $eventHandler->{MEMO} )
                                     : ()
                                  ),
-                                 $self,
-				 $event,
+                                 $self, $event,
                                  (
-                                    defined( $info )
-                                    ? ( $info )
+                                    defined($info) ? ($info)
                                     : ()
                                  ),
                                );
             &{ $eventHandler->{FUNC} }(@event_params);
-	    ++$handled;
+            ++$handled;
         }
 
-        $log and $log->is_debug()
+        $log
+          and $log->is_debug()
           and $log->debugf( 'Event <%s> got triggered for %s ( %s ) -- %d handlers',
-                            $event, ref($self) || __PACKAGE__, $info, $handled );
+                            $event, ref($self) || __PACKAGE__,
+                            $info, $handled );
     }
 
     return $self;
@@ -358,8 +352,9 @@ sub DESTROY
         my $reffunc = refaddr( $elem->{FUNC} );
         my $refmemo = refaddr( $elem->{MEMO} );
 
-        my $match = sub { refaddr( $_->{FUNC} ) == $reffunc and refaddr( $_->{MEMO} ) == $refmemo; };
-	return firstidx( $match, @{$ary});
+        my $match =
+          sub { refaddr( $_->{FUNC} ) == $reffunc and refaddr( $_->{MEMO} ) == $refmemo; };
+        return firstidx( $match, @{$ary} );
     }
 }
 

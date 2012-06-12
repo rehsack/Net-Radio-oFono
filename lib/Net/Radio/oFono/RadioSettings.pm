@@ -16,8 +16,6 @@ use Net::DBus qw(:typing);
 
 use base qw(Net::Radio::oFono::Modem);
 
-use Data::Dumper;
-
 =head1 SYNOPSIS
 
 Quick summary of what the module does.

@@ -38,37 +38,26 @@ Perhaps a little code snippet.
     my @modems = $oFono->getModems();
     my ($mcc, $mnc, $lac, ...) = $
 
-=cut
-
-my $instance;
-
 =head1 SUBROUTINES/METHODS
-
-=head2 get_instance
-
-=cut
-
-sub get_instance
-{
-    $instance and return $instance;
-    my ( $class, %events ) = @_;
-
-    $instance = __PACKAGE__->SUPER::new(%events);
-    bless( $instance, __PACKAGE__ );
-    $instance->_init();
-
-    return $instance;
-}
 
 =head2 new
 
 =cut
 
-no strict 'refs';
+sub new
+{
+    my ( $class, %events ) = @_;
 
-*new = \&get_instance;
+    my $self = __PACKAGE__->SUPER::new(%events);
+    bless( $self, __PACKAGE__ );
+    $self->_init();
 
-use strict 'refs';
+    return $self;
+}
+
+=head2 _init
+
+=cut
 
 sub _init
 {
@@ -89,11 +78,14 @@ sub _init
     return $self;
 }
 
-sub shutdown
+sub DESTROY
 {
-    $instance or return;
+    my $self = $_[0];
 
-    undef $instance;
+    delete $self->{modems};
+    delete $self->{manager};
+
+    return;
 }
 
 sub _add_modem
@@ -115,8 +107,8 @@ sub _update_modem_interfaces
 {
     my ( $self, $modem, $interfaces ) = @_;
     $interfaces //= $modem->GetProperty("Interfaces");
-    my @interface_list              = map { $_ =~ s/org.ofono.//; $_ } @$interfaces;
-    my $if_instances            = $self->{modems}->{$modem->modem_path()};
+    my @interface_list          = map { $_ =~ s/org.ofono.//; $_ } @$interfaces;
+    my $if_instances            = $self->{modems}->{ $modem->modem_path() };
     my %superflous_if_instances = map { $_ => 1 } keys %$if_instances;
     delete $superflous_if_instances{Modem};
 
@@ -126,7 +118,8 @@ sub _update_modem_interfaces
         $if_class->isa("Net::Radio::oFono::Modem") or next;
         defined( $if_instances->{$interface} ) and next;
         $if_instances->{$interface} = $if_class->new( $modem->modem_path() );
-        $if_instances->{$interface}->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
+        $if_instances->{$interface}
+          ->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
         delete $superflous_if_instances{$interface};
         $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem->modem_path(), $interface ] );
         $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED",
@@ -210,12 +203,9 @@ Jens Rehsack, C<< <rehsack at cpan.org> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-net-ofono at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Net-oFono>.  I will be notified, and then you'll
+Please report any bugs or feature requests to C<bug-net-radio-ofono at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Net-Radio-oFono>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-
 
 =head1 SUPPORT
 
@@ -223,26 +213,25 @@ You can find documentation for this module with the perldoc command.
 
     perldoc Net::Radio::oFono
 
-
 You can also look for information at:
 
 =over 4
 
 =item * RT: CPAN's request tracker (report bugs here)
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-oFono>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Net-Radio-oFono>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Net-oFono>
+L<http://annocpan.org/dist/Net-Radio-oFono>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Net-oFono>
+L<http://cpanratings.perl.org/d/Net-Radio-oFono>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Net-oFono/>
+L<http://search.cpan.org/dist/Net-Radio-oFono/>
 
 =back
 

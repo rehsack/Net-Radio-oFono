@@ -14,9 +14,8 @@ our $VERSION = '0.001';
 
 use Net::DBus qw(:typing);
 
-use base qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Properties);
-
-use Data::Dumper;
+use base
+  qw(Net::Radio::oFono::Helpers::EventMgr Net::Radio::oFono::Roles::RemoteObj Net::Radio::oFono::Roles::Properties);
 
 =head1 SYNOPSIS
 
@@ -52,9 +51,9 @@ sub new
 
 sub _init
 {
-    my ($self, $obj_path) = @_;
+    my ( $self, $obj_path ) = @_;
 
-    (my $interface = ref($self)) =~ s/Net::Radio::oFono:://;
+    ( my $interface = ref($self) ) =~ s/Net::Radio::oFono:://;
 
     # initialize roles
     $self->Net::Radio::oFono::Roles::RemoteObj::_init( $obj_path, "org.ofono.$interface" );
