@@ -330,14 +330,7 @@ sub trigger_event
     return $self;
 }
 
-sub DESTROY
-{
-    my $self = $_[0];
-
-    $self->trigger_event("ON_DESTROY");
-
-    return;
-}
+sub DESTROY { return; }
 
 {    # hide from CPAN
 

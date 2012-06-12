@@ -63,9 +63,9 @@ sub DESTROY
 
     defined( $self->{remote_obj} )
       and
-      $self->{manager}->disconnect_from_signal( "IncomingMessage", $self->{sig_incoming_message} );
+      $self->{remote_obj}->disconnect_from_signal( "IncomingMessage", $self->{sig_incoming_message} );
     defined( $self->{remote_obj} )
-      and $self->{manager}
+      and $self->{remote_obj}
       ->disconnect_from_signal( "ImmediateMessage", $self->{sig_immediate_message} );
 
     # destroy role

@@ -94,9 +94,9 @@ sub DESTROY
     $type or croak "Please use ogd";
 
     defined( $self->{remote_obj} )
-      and $self->{manager}->disconnect_from_signal( "${type}Added", $self->{sig_obj_added} );
+      and $self->{remote_obj}->disconnect_from_signal( "${type}Added", $self->{sig_obj_added} );
     defined( $self->{remote_obj} )
-      and $self->{manager}->disconnect_from_signal( "${type}Removed", $self->{sig_obj_removed} );
+      and $self->{remote_obj}->disconnect_from_signal( "${type}Removed", $self->{sig_obj_removed} );
 
     undef $self->{mgmt_objects};
 

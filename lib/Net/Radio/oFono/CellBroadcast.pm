@@ -59,11 +59,9 @@ sub DESTROY
     my $self = $_[0];
 
     defined( $self->{remote_obj} )
-      and $self->{manager}
-      ->disconnect_from_signal( "IncomingBroadcast", $self->{sig_incoming_broadcast} );
+      and $self->{remote_obj}->disconnect_from_signal( "IncomingBroadcast", $self->{sig_incoming_broadcast} );
     defined( $self->{remote_obj} )
-      and $self->{manager}
-      ->disconnect_from_signal( "EmergencyBroadcast", $self->{sig_emergency_broadcast} );
+      and $self->{remote_obj}->disconnect_from_signal( "EmergencyBroadcast", $self->{sig_emergency_broadcast} );
 
     # initialize base class
     $self->Net::Radio::oFono::Modem::DESTROY();
