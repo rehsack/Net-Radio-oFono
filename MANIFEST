@@ -1,5 +1,7 @@
 Build.PL
 Changes
+examples/disable-modem
+examples/enable-modem
 lib/Net/Radio/oFono.pm
 lib/Net/Radio/oFono/CellBroadcast.pm
 lib/Net/Radio/oFono/ConnectionContext.pm
@@ -19,14 +21,12 @@ lib/Net/Radio/oFono/Roles/Manager.pm
 lib/Net/Radio/oFono/Roles/Properties.pm
 lib/Net/Radio/oFono/Roles/RemoteObj.pm
 lib/Net/Radio/oFono/SimManager.pm
+Makefile.PL
 MANIFEST
+META.json
+META.yml
 README
-scripts/disable-modem
-scripts/enable-modem
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
-Makefile.PL
-META.yml
-META.json
