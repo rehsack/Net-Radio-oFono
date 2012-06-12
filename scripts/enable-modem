@@ -9,6 +9,7 @@ use Net::Radio::oFono;
 
 use Net::DBus qw(:typing);
 
+use Log::Any qw($log);
 use Log::Any::Adapter;
 use Log::Log4perl;
 Log::Log4perl->easy_init($Log::Log4perl::DEBUG);
@@ -17,7 +18,6 @@ Log::Any::Adapter->set('Log4perl');
 use Net::DBus::Reactor;
 
 use Time::HiRes qw(sleep);
-use Data::Dumper;
 
 my ( $pin, $apn, $usr, $prd ) = @ENV{ "PIN", "APN", "USR", "PRD" };
 
@@ -58,12 +58,37 @@ sub on_simmgr_pin_required
 
     # we need to enter the pin here
     # XXX maybe add an extra check for ON_SIMMANAGER_PROPERTY_RETRIES_CHANGED // {pin => 3,pin2 => 3,puk => 10,puk2 => 10}
-    $pin_type eq "pin"
-      and $ofono->get_modem_interface( $modem_path, "SimManager" )->EnterPin( "pin", $pin );
-    # pin accepted
-    $pin_type eq "none"
-      and
-      $ofono->get_modem_interface( $modem_path, "Modem" )->SetProperty( "Online", dbus_boolean(1) );
+    given ($pin_type)
+    {
+        when ("pin")
+        {
+            $ofono->get_modem_interface( $modem_path, "SimManager" )->EnterPin( "pin", $pin );
+        }
+        when ("none")
+        {
+            # pin accepted
+        }
+    }
+
+    return;
+}
+
+sub on_simmgr_mnc_changed
+{
+    my ( $ofono, $event, $info ) = @_;
+    my ( $modem_path, $mnc ) = @$info;
+
+    $ofono->get_modem_interface( $modem_path, "Modem" )->SetProperty( "Online", dbus_boolean(1) );
+
+    return;
+}
+
+sub on_modem_online_changed
+{
+    my ( $ofono, $event, $info ) = @_;
+    my ( $modem_path, $online ) = @$info;
+
+    $online and Net::DBus::Reactor->main->shutdown();    # XXX move when add network over air // use Net::Interface?
 
     return;
 }
@@ -88,10 +113,11 @@ my $oFono = Net::Radio::oFono->new(
                            "ON_MODEM_ADDED"                             => \&on_modem_added,
                            "ON_MODEM_PROPERTY_POWERED_CHANGED"          => \&on_modem_power_changed,
                            "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" => \&on_simmgr_pin_required,
+                           "ON_SIMMANAGER_PROPERTY_MOBILENETWORKCODE_CHANGED" => \&on_simmgr_mnc_changed,
                            "ON_MODEM_PROPERTY_FEATURES_CHANGED" => \&on_modem_features_changed,
+                           "ON_MODEM_PROPERTY_ONLINE_CHANGED"          => \&on_modem_online_changed,
 );
 
-# print Dumper($oFono);
-
-# for my $i ( 1 .. 10 ) { Net::DBus::Reactor->main->step(); sleep 0.1; }
 Net::DBus::Reactor->main->run();
+$log->debug("Leaving");
+undef $oFono; # force DESTROY
