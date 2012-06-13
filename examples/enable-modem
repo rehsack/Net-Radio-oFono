@@ -5,6 +5,10 @@ use warnings;
 
 use 5.010;
 
+# Track every object
+#use Devel::Leak::Object qw{ GLOBAL_bless };
+#$Devel::Leak::Object::TRACKSOURCELINES = 1;
+
 use Net::Radio::oFono;
 
 use Net::DBus qw(:typing);
@@ -130,41 +134,40 @@ sub on_conman_attached
     my ( $ofono, $event, $info ) = @_;
     my ( $modem_path, $attached ) = @$info;
 
-    if( $attached )
+    if ($attached)
     {
-	my $conman = $ofono->get_modem_interface( $modem_path, "ConnectionManager" );
-	my $online = $conman->GetProperty("Powered");
-	$online or $conman->SetProperty( "Powered", dbus_boolean(1) );
+        my $conman = $ofono->get_modem_interface( $modem_path, "ConnectionManager" );
+        my $online = $conman->GetProperty("Powered");
+        $online or $conman->SetProperty( "Powered", dbus_boolean(1) );
     }
 
     return;
 }
 
 my %event_handlers = (
-              "ON_MODEM_ADDED"                    => \&on_modem_added,
-              "ON_MODEM_PROPERTY_POWERED_CHANGED" => \&on_modem_power_changed,
-              (
-                (defined($pin) and $pin =~ m/^\d{4}$/)
-                ? (
-                    "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED"       => \&on_simmgr_pin_required,
-                    "ON_SIMMANAGER_PROPERTY_MOBILENETWORKCODE_CHANGED" => \&on_simmgr_mnc_changed,
-                    "ON_MODEM_PROPERTY_FEATURES_CHANGED" => \&on_modem_features_changed,
-                    (
-                      (defined($apn) and $apn =~ m/^$Regexp::Common::URI::RFC2396::host$/)
-                      ? (
-		      "ON_MODEM_INTERFACE_NETWORKREGISTRATION_ADDED" => \&on_nwreg_available,
-		      "ON_CONNECTIONMANAGER_PROPERTY_ATTACHED_CHANGED" => \&on_conman_attached,
-		      )
-                      : ( "ON_MODEM_PROPERTY_ONLINE_CHANGED" => \&on_modem_online_changed, )
-                    )
-                  )
-                : ( "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" =>
-                    sub { Net::DBus::Reactor->main->shutdown(); return; }, )
-              )
+           "ON_MODEM_ADDED"                    => \&on_modem_added,
+           "ON_MODEM_PROPERTY_POWERED_CHANGED" => \&on_modem_power_changed,
+           (
+             ( defined($pin) and $pin =~ m/^\d{4}$/ )
+             ? (
+                 "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED"       => \&on_simmgr_pin_required,
+                 "ON_SIMMANAGER_PROPERTY_MOBILENETWORKCODE_CHANGED" => \&on_simmgr_mnc_changed,
+                 "ON_MODEM_PROPERTY_FEATURES_CHANGED"               => \&on_modem_features_changed,
+                 "ON_MODEM_INTERFACE_NETWORKREGISTRATION_ADDED"     => \&on_nwreg_available,
+                 (
+                     ( defined($apn) and $apn =~ m/^$Regexp::Common::URI::RFC2396::host$/ )
+                   ? ( "ON_CONNECTIONMANAGER_PROPERTY_ATTACHED_CHANGED" => \&on_conman_attached, )
+                   : ( "ON_MODEM_PROPERTY_ONLINE_CHANGED" => \&on_modem_online_changed, )
+                 )
+               )
+             : ( "ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED" =>
+                 sub { Net::DBus::Reactor->main->shutdown(); return; }, )
+           )
 );
 
 my $oFono = Net::Radio::oFono->new(%event_handlers);
 
 Net::DBus::Reactor->main->run();
 $log->debug("Leaving");
-undef $oFono;    # force DESTROY
+#$oFono = undef;    # force DESTROY
+#sleep(1);
