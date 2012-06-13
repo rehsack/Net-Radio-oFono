@@ -107,20 +107,20 @@ sub _update_modem_interfaces
 {
     my ( $self, $modem, $interfaces ) = @_;
     $interfaces //= $modem->GetProperty("Interfaces");
-    my @interface_list          = map { $_ =~ s/org.ofono.//; $_ } @$interfaces;
+    my @interface_list          = map { (my $pure = $_ ) =~ s/org.ofono.//; $pure } @$interfaces;
     my $if_instances            = $self->{modems}->{ $modem->modem_path() };
     my %superflous_if_instances = map { $_ => 1 } keys %$if_instances;
     delete $superflous_if_instances{Modem};
 
     foreach my $interface (@interface_list)
     {
+        delete $superflous_if_instances{$interface};
         my $if_class = "Net::Radio::oFono::$interface";
         $if_class->isa("Net::Radio::oFono::Modem") or next;
         defined( $if_instances->{$interface} ) and next;
         $if_instances->{$interface} = $if_class->new( $modem->modem_path() );
         $if_instances->{$interface}
           ->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
-        delete $superflous_if_instances{$interface};
         $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem->modem_path(), $interface ] );
         $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED",
                               $modem->modem_path() );
