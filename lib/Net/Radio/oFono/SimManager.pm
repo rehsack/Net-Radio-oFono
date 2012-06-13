@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::SimManager
+Net::Radio::oFono::SimManager - access Modem object's SimManager interface
 
 =cut
 
@@ -19,19 +19,18 @@ use base qw(Net::Radio::oFono::Modem);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+=head1 INHERITANCE
 
-Perhaps a little code snippet.
-
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::SimManager
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/sim-api.txt> for valid pin types and detailed
+action description and possible errors.
 
 =cut
 
@@ -39,6 +38,12 @@ my @valid_pin_types = (
                         qw(none pin phone firstphone pin2 network netsub service corp puk),
                         qw(firstphonepuk puk2 networkpuk netsubpuk servicepuk corppuk)
                       );
+
+=head2 ChangePin($pintype,$oldpin,$newpin)
+
+Changes the appropriate pin type.
+
+=cut
 
 sub ChangePin
 {
@@ -57,6 +62,13 @@ sub ChangePin
     return;
 }
 
+=head2 EnterPin($pintype,$pin)
+
+Enters the currently pending pin.  The type value must match the pin type
+being asked in the PinRequired property.
+
+=cut
+
 sub EnterPin
 {
     my ( $self, $pin_type, $pin ) = @_;
@@ -72,6 +84,13 @@ sub EnterPin
 
     return;
 }
+
+=head2 ResetPin($pintype,$puk,$pin)
+
+Provides the unblock key to the modem and if correct resets the pin to
+the new value of pin.
+
+=cut
 
 sub ResetPin
 {
@@ -89,6 +108,12 @@ sub ResetPin
     return;
 }
 
+=head2 LockPin($pintype,$pin)
+
+Activates the lock for the particular pin type.
+
+=cut
+
 sub LockPin
 {
     my ( $self, $pin_type, $pin ) = @_;
@@ -105,6 +130,12 @@ sub LockPin
     return;
 }
 
+=head2 UnlockPin($pintype,$pin)
+
+Deactivates the lock for the particular pin type.
+
+=cut
+
 sub UnlockPin
 {
     my ( $self, $pin_type, $pin ) = @_;
@@ -120,6 +151,13 @@ sub UnlockPin
 
     return;
 }
+
+=head2 GetIcon($id)
+
+Obtain the icon given by id.  Only ids greater than 1 are valid.
+XPM format is currently used to return the icon data.
+
+=cut
 
 sub GetIcon
 {

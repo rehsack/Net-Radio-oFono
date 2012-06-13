@@ -164,7 +164,7 @@ sub add_event
     return $self;
 }
 
-=head add_events(%)
+=head2 add_events(%)
 
 Runs add_event for each key => value pair given.
 
