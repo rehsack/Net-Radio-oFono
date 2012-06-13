@@ -28,19 +28,54 @@ use base qw(Net::Radio::oFono::Helpers::EventMgr);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
+This is the frontend API to communicate with the oFono daemon over DBus.
 
     use Net::Radio::oFono;
 
     my $oFono = Net::Radio::oFono->new();
     my @modems = $oFono->getModems();
-    my ($mcc, $mnc, $lac, ...) = $
+    foreach my $modem_path (@modems)
+    {
+	my $nwreg = $oFono->get_modem_interface("NetworkRegistration");
+	if( $nwreg )
+	{
+	    if( $nwreg->GetProperty("Status", 1) eq "registered" )
+	    {
+		say "Network for modem '" . $modem_path . "': ", $nwreg->GetProperty("Name");
+	    }
+	    else
+	    {
+		say "Network for modem '" . $modem_path . "' is in status ", $nwreg->GetProperty("Status");
+	    }
+	}
+	else
+	{
+	    say "No network registration for modem $modem_path";
+	}
+    }
+
+    # or use the event API
+    my $oFono = Net::Radio::oFono->new(
+      "ON_NETWORKREGISTRATION_PROPERTY_NAME_CHANGED" => sub {
+	  my ( $ofono, $event, $info ) = @_;
+	  my ( $modem_path, $name ) = @$info;
+	  say "Network for modem '" . $modem_path . "': ", $name;
+      },
+      ...
+    );
+
+=head1 INHERITANCE
+
+  Net::Radio::oFono
+  ISA Net::Radio::oFono::Helpers::EventMgr
 
 =head1 SUBROUTINES/METHODS
 
-=head2 new
+=head2 new(%events)
+
+Instantiates new oFono frontend accessor, registers specified events and
+initializes the modem manager. Events between frontend accessor and
+wrapper classes are separated.
 
 =cut
 
@@ -55,7 +90,26 @@ sub new
     return $self;
 }
 
-=head2 _init
+=head2 _init()
+
+Initializes the frontend accessor component:
+
+=over 4
+
+=item *
+
+Instantiates L<Net::Radio::oFono::Manager>.
+
+=item *
+
+Instantiates L<Net::Radio::oFono::Modem> for each already known modem device
+using L</_add_modem>.
+
+=item *
+
+Registers events C<ON_MODEM_ADDED> and C<ON_MODEM_REMOVED> on the manager.
+
+=back
 
 =cut
 
@@ -82,11 +136,27 @@ sub DESTROY
 {
     my $self = $_[0];
 
+    foreach my $modem_path (keys %{$self->{modems}})
+    {
+	$self->_remove_modem($modem_path);
+    }
+
     delete $self->{modems};
     delete $self->{manager};
 
     return;
 }
+
+=head2 _add_modem
+
+Internal method to properly add a modem to the frontend for accessing it.
+
+Registers the events C<ON_PROPERTY_CHANGED> and
+C<ON_PROPERTY_INTERFACES_CHANGED> on the created object.
+
+Triggers the event C<ON_MODEM_ADDED> when finished with that procedure.
+
+=cut
 
 sub _add_modem
 {
@@ -102,6 +172,45 @@ sub _add_modem
 
     $self->trigger_event( "ON_MODEM_ADDED", $modem_path );
 }
+
+=head2 _remove_modem
+
+Internal method to properly remove a modem from the frontend for accessing it.
+
+Removes all interfaces objects from the modem using
+L</_update_modem_interfaces> mocking and empty interface list and finally
+destroy the modem object itself.
+
+Triggers C<ON_MODEM_REMOVED> when the procedure has completed.
+
+=cut
+
+sub _remove_modem
+{
+    my ( $self, $modem_path ) = @_;
+
+    defined( $self->{modems}->{$modem_path} ) or return;
+
+    $self->_update_modem_interfaces($self->{modems}->{$modem_path}->{Modem}, []);
+    delete $self->{modems}->{$modem_path};
+
+    $self->trigger_event( "ON_MODEM_REMOVED", $modem_path );
+}
+
+=head2 _update_modem_interfaces
+
+Internal function to adjust the interface objects of a remote modem objects.
+It iterates over the list of the available interfaces of the "Interfaces"
+property of the modem object to instantiate a new interface object for newly
+added ones and removes those objects of interfaces which are removed.
+
+Triggers the events C<ON_MODEM_INTERFACE_ADDED> and
+C<ON_MODEM_INTERFACE_ . uc($interface) . _ADDED> for each newly instantiated
+interface. Triggers the events C<ON_MODEM_INTERFACE_REMOVED> and
+C<ON_MODEM_INTERFACE_ . uc($interface) . _REMOVED> for each interface which
+was removed.
+
+=cut
 
 sub _update_modem_interfaces
 {
@@ -130,10 +239,18 @@ sub _update_modem_interfaces
     {
         delete $if_instances->{$interface};
         $self->trigger_event( "ON_MODEM_INTERFACE_REMOVED", [ $modem->modem_path(), $interface ] );
+        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_REMOVED", $modem->modem_path() );
     }
 
     return;
 }
+
+=head2 get_modems()
+
+Returns the list of object path's for currently known (and instantiated)
+modem objects.
+
+=cut
 
 sub get_modems
 {
@@ -141,6 +258,14 @@ sub get_modems
 
     return keys %{ $self->{modems} };
 }
+
+=head2 get_modem_interface($modem_path,$interface)
+
+Returns the object for the specified interface on the given modem object.
+If either the modem device isn't known or the interface isn't available
+yet, it returns nothing.
+
+=cut
 
 sub get_modem_interface
 {
@@ -152,6 +277,9 @@ sub get_modem_interface
 }
 
 =head2 on_modem_added
+
+Invoked when the even C<ON_MODEM_ADDED> is triggered by the modem
+manager and invokes L</_add_modem> for the submitted object path.
 
 =cut
 
@@ -166,6 +294,9 @@ sub on_modem_added
 
 =head2 on_modem_removed
 
+Invoked when the even C<ON_MODEM_REMOVED> is triggered by the modem
+manager and invokes L</_remove_modem> for the submitted object path.
+
 =cut
 
 sub on_modem_removed
@@ -175,6 +306,16 @@ sub on_modem_removed
     delete $self->{modems}->{$modem_path};
 }
 
+=head2 on_modem_interfaces_changed
+
+Triggered when a modem object changes it's list of available interfaces
+in addition to L<on_modem_property_changed> with C<Interfaces> as name
+of the changed property.
+
+Updates active interface objects using L</_update_modem_interfaces>.
+
+=cut
+
 sub on_modem_interfaces_changed
 {
     my ( $self, $modem, $event_name, $interfaces ) = @_;
@@ -183,6 +324,17 @@ sub on_modem_interfaces_changed
 
     return;
 }
+
+=head2 on_modem_property_changed
+
+Triggered when a modem object modifies a property.
+
+Triggers C<ON_ . uc($interface) . _PROPERTY_CHANGED> with modem path and
+property name as parameter as well as
+C<ON_ . uc($interface) . _PROPERTY_ . uc($property) . _CHANGED> with
+modem path and property value as parameter.
+
+=cut
 
 sub on_modem_property_changed
 {
