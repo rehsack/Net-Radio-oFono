@@ -12,7 +12,7 @@ use overload
   q(${})  => \&curr_item,
   q(<>)   => \&iterate,
   q(bool) => sub { 1 },
-  q(0+)   => \&n_elements;
+  q(0+)   => \&Net::Radio::oFono::Helpers::Container::n_elements;
 
 =head1 NAME
 
