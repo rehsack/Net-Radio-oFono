@@ -180,7 +180,7 @@ sub _init
     return;
 }
 
-=sub DESTROY
+=head2 DESTROY
 
 Frees previously aquired resources like connected signals, list of managed
 objects (object_path).
