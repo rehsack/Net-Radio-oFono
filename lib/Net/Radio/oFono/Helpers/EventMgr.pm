@@ -164,6 +164,24 @@ sub add_event
     return $self;
 }
 
+=head add_events(%)
+
+Runs add_event for each key => value pair given.
+
+=cut
+
+sub add_events
+{
+    my ($self, %event_params) = @_;
+
+    foreach my $event ( keys(%event_params) )
+    {
+	$self->add_event( $event, $event_params{$event} );
+    }
+
+    return;
+}
+
 =head2 remove_event
 
 Removed a previously added event handler from the list of actions to be
