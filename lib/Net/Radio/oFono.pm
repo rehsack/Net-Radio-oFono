@@ -245,16 +245,20 @@ sub _update_modem_interfaces
     return;
 }
 
-=head2 get_modems()
+=head2 get_modems(;$force)
 
 Returns the list of object path's for currently known (and instantiated)
 modem objects.
+
+TODO: implement way to get without Net::DBus::Reactor->main->run() ...
 
 =cut
 
 sub get_modems
 {
-    my $self = $_[0];
+    my ($self, $force) = @_;
+
+    $force and $self->{manager}->GetModems(1);
 
     return keys %{ $self->{modems} };
 }
