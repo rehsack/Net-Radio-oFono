@@ -69,6 +69,170 @@ This is the frontend API to communicate with the oFono daemon over DBus.
   Net::Radio::oFono
   ISA Net::Radio::oFono::Helpers::EventMgr
 
+=head1 EVENTS
+
+Instances of Net::Radio::oFono can trigger following events (all
+characters are upper cased):
+
+=over 16
+
+=item ON_MODEM_ADDED
+
+Triggered when a new modem is added. On initialization, it is triggered
+for each found modem.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=back
+
+=item ON_MODEM_REMOVED
+
+Triggered when a modem is removed. On destrcution, it is triggered
+for each remaining modem.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=back
+
+=item ON_MODEM_INTERFACE_ADDED
+
+Triggered when an interface is added to a modem object.
+Modem interfaces depend on the modem states, for example the I<SimManager>
+interface is always available when the modem is I<Powered>.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=item $interface
+
+The name of the propagated interface (eg. I<SimManager>, I<RadioSettings>, ...)
+
+=back
+
+=item ON_MODEM_INTERFACE_ . $interface . _ADDED
+
+Triggered when an interface is added to a modem object.
+Modem interfaces depend on the modem states, for example the I<SimManager>
+interface is always available when the modem is I<Powered>.
+
+The advantage of this event compared to I<ON_MODEM_INTERFACE_ADDED> is the
+delegation of the dispatching for different interfaces to the EventMgr.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=back
+
+=item ON_MODEM_INTERFACE_REMOVED
+
+Triggered when an interface is removed from a modem object.
+Modem interfaces depend on the modem states, for example the I<SimManager>
+interface is always available when the modem is I<Powered> and will be
+removed when the modem is turned off.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=item $interface
+
+The name of the propagated interface (eg. I<SimManager>, I<RadioSettings>, ...)
+
+=back
+
+=item ON_MODEM_INTERFACE_ . $interface . _REMOVED
+
+Triggered when an interface is removed from a modem object.
+Modem interfaces depend on the modem states, for example the I<SimManager>
+interface is always available when the modem is I<Powered> and will be
+removed when the modem is turned off.
+
+The advantage of this event compared to I<ON_MODEM_INTERFACE_REMOVED> is the
+delegation of the dispatching for different interfaces to the EventMgr.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=back
+
+=item ON_ . $interface . _PROPERTY_CHANGED
+
+Triggered when a property of a modem object or modem interface object
+is changed. I<Modem> is handled as any other interface for this event.
+
+Typical name for such an event is I<ON_SIMMANAGER_PROPERTY_CHANGED>.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=item $property
+
+Name of the changed property.
+
+=back
+
+=item ON_ . $interface . _PROPERTY_ . $property . _CHANGED
+
+Triggered when a property of a modem object or modem interface object
+is changed. I<Modem> is handled as any other interface for this event.
+
+Typical name for such an event is I<ON_SIMMANAGER_PROPERTY_PINREQUIRED_CHANGED>.
+
+The advantage of this event compared to I<ON_ . $interface . _PROPERTY_CHANGED>
+is the delegation of the dispatching for different properties to the EventMgr.
+
+Parameters:
+
+=over 20
+
+=item $modem_path
+
+D-Bus object path to the modem oject.
+
+=item $property_value
+
+The value of the changed property.
+
+=back
+
+=back
+
 =head1 SUBROUTINES/METHODS
 
 =head2 new(%events)
