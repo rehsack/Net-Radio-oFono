@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::MessageWaiting
+Net::Radio::oFono::MessageWaiting - provide MessageWaiting interface for Modem objects
 
 =cut
 
@@ -18,19 +18,29 @@ use base qw(Net::Radio::oFono::Modem);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $msgwait = Net::Location::oFono->get_modem_interface($modem_path, "MessageWaiting");
+    say "VoicemailWaiting: ", 0+$msgwait->GetProperty("VoicemailWaiting"), # boolean
+        "VoicemailMessageCount: ", 0+$msgwait->GetProperty("VoicemailMessageCount"), # byte
+        "VoicemailMailboxNumber: ", $msgwait->GetProperty("VoicemailMailboxNumber"); # string
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::MessageWaiting
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
 
-=head2 new
+No new ones.
+
+See C<ofono/doc/message-waiting.txt> for valid properties and detailed
+action description and possible errors.
 
 =cut
 

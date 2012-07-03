@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::Message
+Net::Radio::oFono::Message - provide Message API for objects managed by MessageManager
 
 =cut
 
@@ -19,19 +19,34 @@ use base
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $msgman = Net::Location::oFono->get_modem_interface($modem_path, "MessageManager");
+    my %msgs = $msgman->GetMessages();
+    foreach my $msg_path (keys %msgs) {
+      my $msg = $msgman->GetMessage($msg_path);
+      say "msg: ", $msg_path,
+          "State: ", $msg->GetProperty("State");
+    }
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::Message
+  ISA Net::Radio::oFono::Helpers::EventMgr
+  DOES Net::Radio::oFono::Roles::RemoteObj
+  DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/message-api.txt> for valid properties and detailed
+action description and possible errors.
+
+=head2 new($obj_path;%events)
+
+Instantiates new Net::Radio::oFono::Message object at specified object path
+and registers initial events to call on ...
 
 =cut
 
@@ -48,6 +63,13 @@ sub new
 
     return $self;
 }
+
+=head2 _init($obj_path)
+
+Initializes the Message interface. Using the "basename" of the instantiated package
+as interface name for the RemoteObj role.
+
+=cut
 
 sub _init
 {
@@ -75,6 +97,14 @@ sub DESTROY
 
     return;
 }
+
+=head2 Cancel
+
+Cancel a message that was previously sent. Only messages that are waiting
+on queue can be cancelled and it's not possible to cancel messages that
+already had some parts sent.
+
+=cut
 
 sub Cancel
 {

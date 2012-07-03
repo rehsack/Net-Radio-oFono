@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::ConnectionManager
+Net::Radio::oFono::ConnectionManager - provide ConnectionManager interface for Modem objects
 
 =cut
 
@@ -21,19 +21,34 @@ use base qw(Net::Radio::oFono::Modem Net::Radio::oFono::Roles::Manager);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  # show default network information
+  foreach my $modem_path (@modems) {
+    my $conman = Net::Location::oFono->get_modem_interface($modem_path, "ConnectionManager");
+    say "Attached: ", 0+$conman->GetProperty("Attached"), # boolean
+        "Bearer: ", $conman->GetProperty("Bearer"),
+        "RoamingAllowed: ", 0+$conman->GetProperty("RoamingAllowed"); # boolean
+    $conman->DeactivateAll(); # end of data
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::ConnectionManager
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Manager
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/conman-api.txt> for valid properties and detailed
+action description and possible errors.
+
+=head2 _init($obj_path)
+
+Initializes the modem and the manager role to handle the
+I<ContextAdded> and I<ContextRemoved> signals.
 
 =cut
 
@@ -63,6 +78,32 @@ sub DESTROY
     return;
 }
 
+=head2 GetContexts(;$force)
+
+Get hash of context objects and properties.
+
+Set the I<$force> parameter to a true value when no D-Bus main loop
+is running and signal handling might be incomplete.
+
+This method is injected by L<Net::Radio::oFono::Roles::Manager> as an alias
+for L<Net::Radio::oFono::Roles::Manager/GetObjects(;$force)|GetObjects()>.
+
+=head2 GetContext($obj_path;$force)
+
+Returns an instance of the specified L<Net::Radio::oFono::ConnectionContext|Context>.
+
+Set the I<$force> parameter to a true value when no D-Bus main loop
+is running and signal handling might be incomplete.
+
+This method is injected by L<Net::Radio::oFono::Roles::Manager> as an alias
+for L<Net::Radio::oFono::Roles::Manager/GetObject($object_path;$force)|GetObject()>.
+
+=head2 DeactivateAll()
+
+Deactivates all active contexts.
+
+=cut
+
 sub DeactivateAll
 {
     my $self = $_[0];
@@ -72,12 +113,26 @@ sub DeactivateAll
     return;
 }
 
+=head2 AddContext($type)
+
+Creates a new Primary context.  The type contains the intended purpose of
+the context.
+
+=cut
+
 sub AddContext
 {
     my ( $self, $type ) = @_;
 
     return $self->{remote_obj}->AddContext( dbus_string($type) );
 }
+
+=head2 RemoveContext($obj_path)
+
+Removes a primary context.  All secondary contexts, if any, associated with
+the primary context are also removed.
+
+=cut
 
 sub RemoveContext
 {

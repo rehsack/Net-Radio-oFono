@@ -33,7 +33,7 @@ This is the frontend API to communicate with the oFono daemon over DBus.
     use Net::Radio::oFono;
 
     my $oFono = Net::Radio::oFono->new();
-    my @modems = $oFono->getModems();
+    my @modems = $oFono->get_modems();
     foreach my $modem_path (@modems)
     {
 	my $nwreg = $oFono->get_modem_interface("NetworkRegistration");

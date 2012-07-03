@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::CellBroadcast
+Net::Radio::oFono::CellBroadcast - access Modem object's CellBroadcast interface
 
 =cut
 
@@ -18,19 +18,31 @@ use base qw(Net::Radio::oFono::Modem);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $cellbc = Net::Location::oFono->get_modem_interface($modem_path, "CellBroadcast");
+    say "Powered: ", $cellbc->GetProperty("Powered"),
+        "Topics: ", $cellbc->GetProperty("Topics");
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::CellBroadcast
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/cell-broadcast-api.txt> for valid properties and detailed
+action description and possible errors.
+
+=head2 _init($obj_path)
+
+Connects on D-Bus signals I<IncomingBroadcast> and I<EmergencyBroadcast> after
+base class is initialized.
 
 =cut
 
@@ -69,12 +81,28 @@ sub DESTROY
     return;
 }
 
+=head2 onIncomingBroadcast
+
+Called when D-Bus signal I<IncomingBroadcast> is received.
+
+Generates event C<ON_INCOMING_BROADCAST> with arguments C<< $text, $topic >>.
+
+=cut
+
 sub onIncomingBroadcast
 {
     my ( $self, $text, $topic ) = @_;
     $self->trigger_event( "ON_INCOMING_BROADCAST", [ $text, $topic ] );
     return;
 }
+
+=head2 onEmergencyBroadcast
+
+Called when D-Bus signal I<EmergencyBroadcast> is received.
+
+Generates event C<ON_EMERGENCY_BROADCAST> with arguments C<< $text, $topic >>.
+
+=cut
 
 sub onEmergencyBroadcast
 {

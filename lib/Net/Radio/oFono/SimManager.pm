@@ -19,6 +19,15 @@ use base qw(Net::Radio::oFono::Modem);
 
 =head1 SYNOPSIS
 
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $simmgr = Net::Location::oFono->get_modem_interface($modem_path, "SimManager");
+    $simmgr->GetProperty("SubscriberIdentity") eq $cfg{IMSI} # identify right one
+      and $simmgr->GetProperty("PinRequired") eq "pin" # do not enter when not wanted
+      and $simmgr->EnterPin("pin", "1234"); # enter pin code
+  }
+
 =head1 INHERITANCE
 
   Net::Radio::oFono::SimManager

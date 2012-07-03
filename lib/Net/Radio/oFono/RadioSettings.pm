@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::RadioSettings
+Net::Radio::oFono::RadioSettings - provide RadioSettings interface for Modem objects
 
 =cut
 
@@ -18,19 +18,26 @@ use base qw(Net::Radio::oFono::Modem);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $rs = Net::Location::oFono->get_modem_interface($modem_path, "RadioSettings");
+    $rs->SetProperty("TechnologyPreference", dbus_string("umts")); # only UMTS used for radio access
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::RadioSettings
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
 
-=head2 new
+No new ones.
+
+See C<ofono/doc/radio-settings.txt> for detailed property description.
 
 =cut
 

@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::MessageManager
+Net::Radio::oFono::MessageManager - provide MessageManager interface for Modem objects
 
 =cut
 
@@ -19,19 +19,34 @@ use base qw(Net::Radio::oFono::Modem Net::Radio::oFono::Roles::Manager);
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  # show default network information
+  foreach my $modem_path (@modems) {
+    my $msgman = Net::Location::oFono->get_modem_interface($modem_path, "MessageManager");
+    say "Alphabet: ", $msgman->GetProperty("Alphabet");
+    $msgman->SendMessage("911", "Wanna have some fun?");
+  }
 
-Perhaps a little code snippet.
+=head1 INHERITANCE
 
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  Net::Radio::oFono::MessageManager
+  ISA Net::Radio::oFono::Modem
+    ISA Net::Radio::oFono::Helpers::EventMgr
+    DOES Net::Radio::oFono::Roles::RemoteObj
+    DOES Net::Radio::oFono::Roles::Manager
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/messagemanager-api.txt> for valid properties and detailed
+action description and possible errors.
+
+=head2 _init($obj_path)
+
+Initializes the modem and the manager role to handle the
+I<MessageAdded> and I<MessageRemoved> signals. After it
+handlers for the D-Bus signals I<ImmediateMessage> and
+I<IncomingMessage> are added.
 
 =cut
 
@@ -76,6 +91,35 @@ sub DESTROY
     return;
 }
 
+=head2 GetMessages(;$force)
+
+Get an hash of message object paths and properties that represents the
+currently pending messages.
+
+Set the I<$force> parameter to a true value when no D-Bus main loop
+is running and signal handling might be incomplete.
+
+This method is injected by L<Net::Radio::oFono::Roles::Manager> as an alias
+for L<Net::Radio::oFono::Roles::Manager/GetObjects(;$force)|GetObjects()>.
+
+=head2 GetMessage($obj_path;$force)
+
+Returns an instance of the specified L<Net::Radio::oFono::Message|Message>.
+
+Set the I<$force> parameter to a true value when no D-Bus main loop
+is running and signal handling might be incomplete.
+
+This method is injected by L<Net::Radio::oFono::Roles::Manager> as an alias
+for L<Net::Radio::oFono::Roles::Manager/GetObject($object_path;$force)|GetObject()>.
+
+=head2 SendMessage($to,$text)
+
+Send the message in text to the number in to.  If the message could be
+queued successfully, this method returns an object path to the created
+Message object.
+
+=cut
+
 sub SendMessage
 {
     my ( $self, $to, $text ) = @_;
@@ -85,6 +129,15 @@ sub SendMessage
     return;
 }
 
+=head2 onImmediateMessage
+
+Called when D-Bus signal I<ImmediateMessage> is received.
+
+Generates event C<ON_IMMEDIATE_MESSAGE> with arguments C<< $message, $info >>.
+$info has Sender, LocalSentTime, and SentTime information.
+
+=cut
+
 sub onImmediateMessage
 {
     my ( $self, $message, $info ) = @_;
@@ -93,6 +146,15 @@ sub onImmediateMessage
 
     return;
 }
+
+=head2 onIncomingMessage
+
+Called when D-Bus signal I<IncomingMessage> is received.
+
+Generates event C<ON_INCOMING_MESSAGE> with arguments C<< $message, $info >>.
+$info has Sender, LocalSentTime, and SentTime information.
+
+=cut
 
 sub onIncomingMessage
 {

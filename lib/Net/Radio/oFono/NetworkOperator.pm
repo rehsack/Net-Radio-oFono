@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::NetworkOperator
+Net::Radio::oFono::NetworkOperator - provide NetworkOperator API for objects managed by NetworkRegistration
 
 =cut
 
@@ -20,17 +20,39 @@ use base
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  foreach my $modem_path (@modems) {
+    my $simmgr = Net::Location::oFono->get_modem_interface($modem_path, "SimManager");
+    $simmgr->GetProperty("SubscriberIdentity") eq $cfg{IMSI} # identify right one
+      or next;
+    my $netreg = Net::Location::oFono->get_modem_interface($modem_path, "NetworkRegistration");
+    my %operators = $netreg->GetOperators();
+    foreach my $oper_path (keys %operators) {
+      my $oper = $netreg->GetOperator($oper_path);
+      if( $oper->GetProperty("Name") =~ $pref ) {
+	$oper->Register();
+	last;
+      }
+    }
+  }
 
-Perhaps a little code snippet.
+=head1 DESCRIPTION
 
-    use Net::Radio::oFono::Manager;
+This class provide NetworkOperator API for objects managed by
+L<Net::Radio::oFono::NetworkRegistration|NetworkRegistration>.
 
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+=head1 INHERITANCE
+
+  Net::Radio::oFono::NetworkOperator
+  ISA Net::Radio::oFono::Helpers::EventMgr
+  DOES Net::Radio::oFono::Roles::RemoteObj
+  DOES Net::Radio::oFono::Roles::Properties
 
 =head1 METHODS
+
+See C<ofono/doc/network-api.txt> for valid properties and detailed
+action description and possible errors.
 
 =head2 new
 
@@ -73,6 +95,24 @@ sub DESTROY
 
     # destroy base class
     $self->Net::Radio::oFono::Helpers::EventMgr::DESTROY();
+
+    return;
+}
+
+=head2 Register()
+
+Attempts to register to this network operator.
+
+The method will return immediately, the result should be observed by
+tracking the NetworkRegistration Status property.
+
+=cut
+
+sub Register
+{
+    my ($self) = @_;
+
+    $self->{remote_obj}->Register();
 
     return;
 }

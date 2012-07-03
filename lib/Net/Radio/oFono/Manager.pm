@@ -32,6 +32,13 @@ Provides access to oFono's Modem Manager object (org.ofono.Manager interface).
 Usually L<Net::Radio::oFono> does all of it for you, including modem
 management and interface instantiation.
 
+=head1 INHERITANCE
+
+  Net::Radio::oFono::Manager
+  ISA Net::Radio::oFono::Helpers::EventMgr
+  DOES Net::Radio::oFono::Roles::RemoteObj
+  DOES Net::Radio::oFono::Roles::Manager
+
 =head1 METHODS
 
 =head2 new(;%events)

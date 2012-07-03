@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-Net::Radio::oFono::ConnectionContext
+Net::Radio::oFono::ConnectionContext - provide ConnectionContext API for objects managed by ConnectionManager
 
 =cut
 
@@ -20,19 +20,30 @@ use base
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
-    use Net::Radio::oFono::Manager;
-
-    my $oMgr = Net::Radio::oFono::Manager->new();
-    my @modems = $oMgr->GetModems();
-    my ($mcc, $mnc, $lac, ...) = $
+  my $oFono = Net::Location::oFono->new();
+  my @modems = Net::Location::oFono->get_modems();
+  # show each available context
+  foreach my $modem_path (@modems) {
+    my $conman = Net::Location::oFono->get_modem_interface($modem_path, "ConnectionManager");
+    my %ctxs = $conman->GetContexts();
+    foreach my $ctx_path (keys %ctxs) {
+      my $ctx = $conman->GetContext($ctx_path);
+      say "Status: ", $ctx->GetProperty("Status"),
+          "Name: ", $ctx->GetProperty("Name"),
+          "Settings: ", Dumper($ctx->GetProperty("Settings") // {}), # hash
+          "IPv6.Settings: ", Dumper($ctx->GetProperty("IPv6.Settings") // {}); # hash
+    }
+  }
 
 =head1 METHODS
 
-=head2 new
+See C<ofono/doc/conman-api.txt> for valid properties and detailed
+action description and possible errors.
+
+=head2 new($obj_path;%events)
+
+Instantiates new Net::Radio::oFono::ConnectionContext object at specified
+object path and registers initial events to call on ...
 
 =cut
 
@@ -49,6 +60,13 @@ sub new
 
     return $self;
 }
+
+=head2 _init($obj_path)
+
+Initializes the ConnectionContext interface. Using the "basename" of the
+instantiated package as interface name for the RemoteObj role.
+
+=cut
 
 sub _init
 {
