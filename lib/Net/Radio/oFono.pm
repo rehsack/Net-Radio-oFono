@@ -335,6 +335,8 @@ sub _add_modem
     $self->_update_modem_interfaces($modem);
 
     $self->trigger_event( "ON_MODEM_ADDED", $modem_path );
+
+    return;
 }
 
 =head2 _remove_modem
@@ -359,9 +361,11 @@ sub _remove_modem
     delete $self->{modems}->{$modem_path};
 
     $self->trigger_event( "ON_MODEM_REMOVED", $modem_path );
+
+    return;
 }
 
-sub _get_remote_obj
+sub _create_remote_obj
 {
     my ( $self, $if_class, $obj_path ) = @_;
     my %events = ();
@@ -418,7 +422,7 @@ sub _update_modem_interfaces
         $if_class->isa("Net::Radio::oFono::Modem") or next;
         defined( $if_instances->{$interface} ) and next;
         my $modem_path = $modem->modem_path();
-        $if_instances->{$interface} = $self->_get_remote_obj( $if_class, $modem_path );
+        $if_instances->{$interface} = $self->_create_remote_obj( $if_class, $modem_path );
         $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem_path, $interface ] );
         $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED", $modem_path );
     }
@@ -469,6 +473,57 @@ sub get_modem_interface
     return;
 }
 
+sub _add_managed_object
+{
+    my ( $self, $mgr_type, $mgmt_type, $obj_path ) = @_;
+
+    my $hn       = lc($mgmt_type) . "s";
+    my $if_class = "Net::Radio::oFono::" . $mgmt_type;
+
+    $self->{$hn}->{$obj_path}->{$mgmt_type} = $self->_create_remote_obj( $if_class, $obj_path );
+
+    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_ADDED", $obj_path );
+
+    return;
+}
+
+sub _remove_managed_object
+{
+    my ( $self, $mgr_type, $mgmt_type, $obj_path ) = @_;
+
+    my $hn = lc($mgmt_type) . "s";
+    defined( $self->{$hn}->{$obj_path} ) or return;
+
+    delete $self->{$hn}->{$obj_path};
+
+    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_REMOVED", $obj_path );
+
+    return;
+}
+
+=head2 get_remote_object($type,$obj_path;$if_name)
+
+Returns the object for the specified remote object on the given object path.
+Missing $if_name is replaced by $type.
+
+If one of $type, $obj_path or $if_name isn't available, nothing is returned.
+
+=cut
+
+sub get_remote_object
+{
+    my ( $self, $type, $obj_path, $if_name ) = @_;
+    my $hn = lc($type) . "s";
+    $if_name //= $type;
+
+          defined( $self->{$hn} )
+      and defined( $self->{$hn}->{$obj_path} )
+      and defined( $self->{$hn}->{$obj_path}->{$if_name} )
+      and return $self->{$hn}->{$obj_path}->{$if_name};
+
+    return;
+}
+
 =head2 on_modem_added
 
 Invoked when the even C<ON_MODEM_ADDED> is triggered by the modem
@@ -496,7 +551,7 @@ sub on_modem_removed
 {
     my ( $self, $manager, $event, $modem_path ) = @_;
 
-    delete $self->{modems}->{$modem_path};
+    $self->_remove_modem($modem_path);
 
     return;
 }
@@ -538,7 +593,7 @@ sub on_object_added
     my $mgmt_type = $obj_mgr->_get_managed_type();
     ( my $mgr_type = ref($obj_mgr) ) =~ s/Net::Radio::oFono:://;
 
-    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_ADDED", $obj_path );
+    $self->_add_managed_object( $mgr_type, $mgmt_type, $obj_path );
 
     return;
 }
@@ -561,7 +616,7 @@ sub on_object_removed
     my $mgmt_type = $obj_mgr->_get_managed_type();
     ( my $mgr_type = ref($obj_mgr) ) =~ s/Net::Radio::oFono:://;
 
-    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_REMOVED", $obj_path );
+    $self->_remove_managed_object( $mgr_type, $mgmt_type, $obj_path );
 
     return;
 }
