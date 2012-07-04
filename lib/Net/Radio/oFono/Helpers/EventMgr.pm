@@ -380,7 +380,7 @@ sub trigger_event
     return $self;
 }
 
-sub DESTROY { return; }
+sub DESTROY { delete $_[0]->{events}; return; }
 
 {    # hide from CPAN
 
