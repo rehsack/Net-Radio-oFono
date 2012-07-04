@@ -300,9 +300,9 @@ sub DESTROY
 {
     my $self = $_[0];
 
-    foreach my $modem_path (keys %{$self->{modems}})
+    foreach my $modem_path ( keys %{ $self->{modems} } )
     {
-	$self->_remove_modem($modem_path);
+        $self->_remove_modem($modem_path);
     }
 
     delete $self->{modems};
@@ -329,7 +329,7 @@ sub _add_modem
     my $modem = Net::Radio::oFono::Modem->new($modem_path);
     $self->{modems}->{$modem_path}->{Modem} = $modem;
 
-    $modem->add_event( "ON_PROPERTY_CHANGED",            \&on_modem_property_changed,   $self );
+    $modem->add_event( "ON_PROPERTY_CHANGED",            \&on_property_changed,         $self );
     $modem->add_event( "ON_PROPERTY_INTERFACES_CHANGED", \&on_modem_interfaces_changed, $self );
 
     $self->_update_modem_interfaces($modem);
@@ -355,10 +355,36 @@ sub _remove_modem
 
     defined( $self->{modems}->{$modem_path} ) or return;
 
-    $self->_update_modem_interfaces($self->{modems}->{$modem_path}->{Modem}, []);
+    $self->_update_modem_interfaces( $self->{modems}->{$modem_path}->{Modem}, [] );
     delete $self->{modems}->{$modem_path};
 
     $self->trigger_event( "ON_MODEM_REMOVED", $modem_path );
+}
+
+sub _get_remote_obj
+{
+    my ( $self, $if_class, $obj_path ) = @_;
+    my %events = ();
+
+    $if_class->DOES("Net::Radio::oFono::Roles::Properties")
+      and $events{ON_PROPERTY_CHANGED} = {
+                                           FUNC => \&on_property_changed,
+                                           MEMO => $self
+                                         };
+    if ( $if_class->DOES("Net::Radio::oFono::Roles::Manager") )
+    {
+        my $type = uc( $if_class->_get_managed_type() );
+        $events{ "ON_" . $type . "_ADDED" } = {
+                                                FUNC => \&on_object_added,
+                                                MEMO => $self
+                                              };
+        $events{ "ON_" . $type . "_REMOVED" } = {
+                                                  FUNC => \&on_object_removed,
+                                                  MEMO => $self
+                                                };
+    }
+
+    return $if_class->new( $obj_path, %events );
 }
 
 =head2 _update_modem_interfaces
@@ -380,8 +406,8 @@ sub _update_modem_interfaces
 {
     my ( $self, $modem, $interfaces ) = @_;
     $interfaces //= $modem->GetProperty("Interfaces");
-    my @interface_list          = map { (my $pure = $_ ) =~ s/org.ofono.//; $pure } @$interfaces;
-    my $if_instances            = $self->{modems}->{ $modem->modem_path() };
+    my @interface_list = map { ( my $pure = $_ ) =~ s/org.ofono.//; $pure } @$interfaces;
+    my $if_instances = $self->{modems}->{ $modem->modem_path() };
     my %superflous_if_instances = map { $_ => 1 } keys %$if_instances;
     delete $superflous_if_instances{Modem};
 
@@ -391,19 +417,18 @@ sub _update_modem_interfaces
         my $if_class = "Net::Radio::oFono::$interface";
         $if_class->isa("Net::Radio::oFono::Modem") or next;
         defined( $if_instances->{$interface} ) and next;
-        $if_instances->{$interface} = $if_class->new( $modem->modem_path() );
-        $if_instances->{$interface}
-          ->add_event( "ON_PROPERTY_CHANGED", \&on_modem_property_changed, $self );
-        $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem->modem_path(), $interface ] );
-        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED",
-                              $modem->modem_path() );
+        my $modem_path = $modem->modem_path();
+        $if_instances->{$interface} = $self->_get_remote_obj( $if_class, $modem_path );
+        $self->trigger_event( "ON_MODEM_INTERFACE_ADDED", [ $modem_path, $interface ] );
+        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_ADDED", $modem_path );
     }
 
     foreach my $interface ( keys %superflous_if_instances )
     {
         delete $if_instances->{$interface};
-        $self->trigger_event( "ON_MODEM_INTERFACE_REMOVED", [ $modem->modem_path(), $interface ] );
-        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_REMOVED", $modem->modem_path() );
+        my $modem_path = $modem->modem_path();
+        $self->trigger_event( "ON_MODEM_INTERFACE_REMOVED", [ $modem_path, $interface ] );
+        $self->trigger_event( "ON_MODEM_INTERFACE_" . uc($interface) . "_REMOVED", $modem_path );
     }
 
     return;
@@ -420,7 +445,7 @@ TODO: implement way to get without Net::DBus::Reactor->main->run() ...
 
 sub get_modems
 {
-    my ($self, $force) = @_;
+    my ( $self, $force ) = @_;
 
     $force and $self->{manager}->GetModems(1);
 
@@ -472,12 +497,14 @@ sub on_modem_removed
     my ( $self, $manager, $event, $modem_path ) = @_;
 
     delete $self->{modems}->{$modem_path};
+
+    return;
 }
 
 =head2 on_modem_interfaces_changed
 
 Triggered when a modem object changes it's list of available interfaces
-in addition to L<on_modem_property_changed> with C<Interfaces> as name
+in addition to L<on_property_changed> with C<Interfaces> as name
 of the changed property.
 
 Updates active interface objects using L</_update_modem_interfaces>.
@@ -493,7 +520,53 @@ sub on_modem_interfaces_changed
     return;
 }
 
-=head2 on_modem_property_changed
+=head2 on_object_added
+
+Invoked when the even C<ON_ ... _ADDED> is triggered by any modem
+interface with manager role when an embedded object is added. Triggers
+event C<"ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_ADDED"> with
+the object path of the created object as parameter.
+
+When a new context is added in ConnectionManager, the event
+C<ON_CONNECTIONMANAGER_CONTEXT_ADDED> is triggered.
+
+=cut
+
+sub on_object_added
+{
+    my ( $self, $obj_mgr, $event, $obj_path ) = @_;
+    my $mgmt_type = $obj_mgr->_get_managed_type();
+    ( my $mgr_type = ref($obj_mgr) ) =~ s/Net::Radio::oFono:://;
+
+    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_ADDED", $obj_path );
+
+    return;
+}
+
+=head2 on_object_removed
+
+Invoked when the even C<ON_ ... _REMOVED> is triggered by any modem
+interface with manager role when an embedded object is removed. Triggers
+event C<"ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_ADDED"> with the
+object path of the created object as parameter.
+
+When a context is removed from ConnectionManager, the event
+C<ON_CONNECTIONMANAGER_CONTEXT_REMOVED> is triggered.
+
+=cut
+
+sub on_object_removed
+{
+    my ( $self, $obj_mgr, $event, $obj_path ) = @_;
+    my $mgmt_type = $obj_mgr->_get_managed_type();
+    ( my $mgr_type = ref($obj_mgr) ) =~ s/Net::Radio::oFono:://;
+
+    $self->trigger_event( "ON_" . uc($mgr_type) . "_" . uc($mgmt_type) . "_REMOVED", $obj_path );
+
+    return;
+}
+
+=head2 on_property_changed
 
 Triggered when a modem object modifies a property.
 
@@ -504,7 +577,7 @@ modem path and property value as parameter.
 
 =cut
 
-sub on_modem_property_changed
+sub on_property_changed
 {
     my ( $self, $obj, $event_name, $property ) = @_;
     my $modem_path = $obj->modem_path();

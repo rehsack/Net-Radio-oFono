@@ -72,7 +72,7 @@ sub _init
 
     # initialize roles
     $self->Net::Radio::oFono::Roles::RemoteObj::_init( "/", "org.ofono.Manager" );
-    $self->Net::Radio::oFono::Roles::Manager::_init("Modem");
+    $self->Net::Radio::oFono::Roles::Manager::_init();
 
     return;
 }

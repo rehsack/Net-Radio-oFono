@@ -92,10 +92,11 @@ Triggered when an object of specified type is removed.
 
 =head1 FUNCTIONS
 
-=head2 import
+=head2 import($type;$interface)
 
 When invoked, getters for embedded objects are injected into caller's
-namespace using the generic L</GetObjects> and L</GetObject>.
+namespace using the generic L</GetObjects> and L</GetObject> as well
+as required static methods for managed types.
 
 Using the MessageManager example:
 
@@ -106,18 +107,35 @@ Using the MessageManager example:
 Injects C<GetMessages> and C<GetMessage> into
 Net::Radio::oFono::MessageManager,
 using C<GetObjects> for C<GetMessages> and
-C<GetObject> for C<GetMessage>.
+C<GetObject> for C<GetMessage>. Injects C<_get_managed_type>
+and C<_get_managed_interface> into Net::Radio::oFono::MessageManager,
+returning C<Message> as descriptive type and C<Message> as interface
+or class type, respectively.
+
+    package Net::Radio::oFono::NetworkRegistration;
+    ...
+    use Net::Radio::oFono::Roles::NetworkRegistration qw(Operator NetworkOperator);
+
+Injects C<GetOperators> and C<GetOperator> into
+Net::Radio::oFono::NetworkRegistration,
+using C<GetObjects> for C<GetOperators> and
+C<GetObject> for C<GetOperator>. Injects C<_get_managed_type>
+and C<_get_managed_interface> into Net::Radio::oFono::NetworkRegistration,
+returning C<Operator> as descriptive type and C<NetworkOperator> as
+interface or class type, respectively.
 
 =cut
 
 sub import
 {
-    my ( $pkg, $type ) = @_;
+    my ( $me, $type, $interface ) = @_;
+
+    $interface //= $type;
     my $caller = caller;
 
     if ( defined($type) && !( $caller->can("Get${type}") ) )
     {
-        $pkg = __PACKAGE__;    # avoid inheritance confusion
+        my $pkg = __PACKAGE__;    # avoid inheritance confusion
 
         my $code = <<"EOC";
 package $caller;
@@ -137,12 +155,34 @@ EOC
         eval $code or die "Can't inject provides-API";
     }
 
+    if ( defined($interface) && !( $caller->can("_get_managed_type") ) )
+    {
+        my $pkg = __PACKAGE__;    # avoid inheritance confusion
+
+        my $code = <<"EOC";
+package $caller;
+
+sub _get_managed_type
+{
+    return "${type}";
+}
+
+sub _get_managed_interface
+{
+    return "${interface}";
+}
+
+1;
+EOC
+        eval $code or die "Can't inject chicken-egg-solver";
+    }
+
     return 1;
 }
 
 =head1 METHODS
 
-=head2 _init($type;$interface)
+=head2 _init()
 
 Initializes the manager role of the object.
 
@@ -160,20 +200,19 @@ C<${type}Removed> provided by oFono's manager objects.
 
 sub _init
 {
-    my ( $self, $type, $interface ) = @_;
+    my ($self) = @_;
 
-    $interface //= $type;
-    $self->{mgmt_type}      = $type;
-    $self->{MGMT_TYPE}      = uc($type);
-    $self->{mgmt_interface} = $interface;
+    $self->{mgmt_type}      = $self->_get_managed_type();
+    $self->{MGMT_TYPE}      = uc( $self->{mgmt_type} );
+    $self->{mgmt_interface} = $self->_get_managed_interface();
 
     my $on_obj_added = sub { return $self->onObjectAdded(@_); };
     $self->{sig_obj_added} =
-      $self->{remote_obj}->connect_to_signal( "${type}Added", $on_obj_added );
+      $self->{remote_obj}->connect_to_signal( $self->{mgmt_type} . "Added", $on_obj_added );
 
     my $on_obj_removed = sub { return $self->onObjectRemoved(@_); };
     $self->{sig_obj_removed} =
-      $self->{remote_obj}->connect_to_signal( "${type}Removed", $on_obj_removed );
+      $self->{remote_obj}->connect_to_signal( $self->{mgmt_type} . "Removed", $on_obj_removed );
 
     $self->GetObjects(1);
 

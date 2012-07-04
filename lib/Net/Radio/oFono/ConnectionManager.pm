@@ -16,7 +16,7 @@ use Net::DBus qw(:typing);
 
 require Net::Radio::oFono::ConnectionContext;
 
-use Net::Radio::oFono::Roles::Manager qw(Context);
+use Net::Radio::oFono::Roles::Manager qw(Context ConnectionContext);
 use base qw(Net::Radio::oFono::Modem Net::Radio::oFono::Roles::Manager);
 
 =head1 SYNOPSIS
@@ -61,7 +61,7 @@ sub _init
     # initialize base class
     $self->Net::Radio::oFono::Modem::_init($obj_path);
     # initialize role
-    $self->Net::Radio::oFono::Roles::Manager::_init( "Context", "ConnectionContext" );
+    $self->Net::Radio::oFono::Roles::Manager::_init();
 
     return;
 }

@@ -66,7 +66,7 @@ sub new
 {
     my ( $class, %params ) = @_;
 
-    $log->is_debug() and $log->debugf( '%s::new( %s )', $class, \%params );
+    $log->is_debug() and $log->debugf( '%s::new( %s )', $class, [ keys %params ] );
 
     my $self = bless( {}, $class );
 
@@ -172,11 +172,11 @@ Runs add_event for each key => value pair given.
 
 sub add_events
 {
-    my ($self, %event_params) = @_;
+    my ( $self, %event_params ) = @_;
 
     foreach my $event ( keys(%event_params) )
     {
-	$self->add_event( $event, $event_params{$event} );
+        $self->add_event( $event, $event_params{$event} );
     }
 
     return;

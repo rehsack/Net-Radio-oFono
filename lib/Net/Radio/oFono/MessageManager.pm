@@ -59,7 +59,7 @@ sub _init
     # initialize base class
     $self->Net::Radio::oFono::Modem::_init($obj_path);
     # initialize role
-    $self->Net::Radio::oFono::Roles::Manager::_init("Message");
+    $self->Net::Radio::oFono::Roles::Manager::_init();
 
     my $on_incoming_message = sub { return $self->onIncomingMessage(@_); };
     $self->{sig_incoming_message} =
@@ -77,8 +77,8 @@ sub DESTROY
     my $self = $_[0];
 
     defined( $self->{remote_obj} )
-      and
-      $self->{remote_obj}->disconnect_from_signal( "IncomingMessage", $self->{sig_incoming_message} );
+      and $self->{remote_obj}
+      ->disconnect_from_signal( "IncomingMessage", $self->{sig_incoming_message} );
     defined( $self->{remote_obj} )
       and $self->{remote_obj}
       ->disconnect_from_signal( "ImmediateMessage", $self->{sig_immediate_message} );
