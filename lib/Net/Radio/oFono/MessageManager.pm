@@ -91,6 +91,8 @@ sub DESTROY
     return;
 }
 
+sub _extra_events { return qw(ON_IMMEDIATE_MESSAGE ON_INCOMING_MESSAGE); }
+
 =head2 GetMessages(;$force)
 
 Get an hash of message object paths and properties that represents the

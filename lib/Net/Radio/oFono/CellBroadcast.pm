@@ -83,6 +83,8 @@ sub DESTROY
     return;
 }
 
+sub _extra_events { return qw(ON_INCOMING_BROADCAST ON_EMERGENCY_BROADCAST); }
+
 =head2 onIncomingBroadcast
 
 Called when D-Bus signal I<IncomingBroadcast> is received.

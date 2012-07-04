@@ -388,6 +388,18 @@ sub _create_remote_obj
                                                 };
     }
 
+    if ( $if_class->can("_extra_events") )
+    {
+        my @extra_events = $if_class->_extra_events();
+        foreach my $extra_event (@extra_events)
+        {
+            $events{$extra_event} = {
+                                      FUNC => \&on_extra_event,
+                                      MEMO => $self
+                                    };
+        }
+    }
+
     return $if_class->new( $obj_path, %events );
 }
 
@@ -516,8 +528,8 @@ sub get_remote_object
     my $hn = lc($type) . "s";
     $if_name //= $type;
 
-          defined( $self->{$hn} )
-      and defined( $self->{$hn}->{$obj_path} )
+    defined( $self->{$hn} ) or return $self->get_modem_interface( $obj_path, $if_name );
+    defined( $self->{$hn}->{$obj_path} )
       and defined( $self->{$hn}->{$obj_path}->{$if_name} )
       and return $self->{$hn}->{$obj_path}->{$if_name};
 
@@ -641,6 +653,46 @@ sub on_property_changed
     $self->trigger_event( "ON_" . uc($if_name) . "_PROPERTY_CHANGED", [ $modem_path, $property ] );
     $self->trigger_event( "ON_" . uc($if_name) . "_PROPERTY_" . uc($property) . "_CHANGED",
                           [ $modem_path, $obj->GetProperty($property) ] );
+
+    return;
+}
+
+=head2 on_extra_event
+
+Triggered when any managed remote object fires an event which is not
+usually watched. This event is enriched with some information about the
+original sender:
+
+=over 4
+
+=item *
+
+The name of the event is modified by placing the upper cased basename of
+the triggering object interface directly behind the leading "ON_".
+
+=item *
+
+The list of arguments is prepended by the basename of the triggering
+object and the object path of the triggering object.
+
+=back
+
+Use L</get_remote_object($type,$obj_path;$if_name)|get_remote_object($type,$obj_path)>
+to get the object instance.
+
+=cut
+
+sub on_extra_event
+{
+    my ( $self, $obj, $event_name, $arg ) = @_;
+
+    my @event_parts = split( "_", $event_name );
+    ( my $type = ref($obj) ) =~ s/Net::Radio::oFono:://;
+    splice( @event_parts, 1, 0, uc($type) );
+
+    my $fwd_arg =
+      _ARRAY($arg) ? [ $type, $obj->obj_path(), @$arg ] : [ $type, $obj->obj_path(), $arg ];
+    $self->trigger_event( join( "_", @event_parts ), $fwd_arg );
 
     return;
 }
